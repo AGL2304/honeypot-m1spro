@@ -64,9 +64,24 @@ def _ship_line(client: httpx.Client, line: str) -> None:
         pass  # l'analyzer peut être momentanément indisponible
 
 
+def _seed_offsets_at_eof(offsets: dict[str, int]) -> None:
+    """Premier démarrage (aucun offset persisté) : la base est déjà peuplée par
+    les passes précédentes, donc ré-expédier tout le backlog (~20k events en POST
+    HTTP bloquant) est lent et inutile. On se cale sur l'EOF de chaque fichier :
+    seuls les NOUVEAUX événements seront shippés -> démarrage instantané.
+    SHIP_FROM_START=1 force la ré-expédition complète depuis 0 (ex: pgdata vidé
+    mais volume logs conservé)."""
+    for service in SERVICES:
+        path = LOG_DIR / f"{service}.jsonl"
+        offsets[service] = path.stat().st_size if path.exists() else 0
+    _save_offsets(offsets)
+
+
 def run() -> None:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     offsets = _load_offsets()
+    if not _offsets_path().exists() and os.environ.get("SHIP_FROM_START") != "1":
+        _seed_offsets_at_eof(offsets)
     last_export = 0.0
     with httpx.Client() as client:
         while True:
