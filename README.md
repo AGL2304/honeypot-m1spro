@@ -44,7 +44,9 @@ d'auto-attaque pour valider la chaîne de détection, et une industrialisation C
   - **SSH** (`asyncssh`) — faux shell Debian crédible, capture login/pass + commandes.
   - **HTTP** (`FastAPI`) — 6 routes piégées (`/admin`, `/wp-login.php`, `/.env`,
     `/.git/config`, `/phpinfo.php`, `/api/v1/users`) + catch-all, payloads loggés.
-  - **FTP** (`pyftpdlib`) — faux filesystem appât (`secrets.txt`, `db_dump.sql`…).
+  - **FTP** (`pyftpdlib`) — authorizer **permissif** (accepte tout couple
+    user/mot de passe), faux filesystem appât (`secrets.txt`, `db_dump.sql`…),
+    capture du credential validé + mode passif fonctionnel sous Docker.
   - **Telnet** (asyncio) — cible des botnets IoT (Mirai/Gafgyt), réutilise le faux shell.
 - **Pipeline d'analyse** : log shipper → API d'ingestion → PostgreSQL → classifier
   heuristique **4 profils** → enrichissement **GeoIP + AbuseIPDB**.
@@ -147,7 +149,7 @@ docker compose up --build -d
 
 # 3. Vérifier
 docker compose ps
-curl -s http://localhost:80/.env        # doit renvoyer un faux .env
+curl -s http://localhost:8080/.env      # doit renvoyer un faux .env (HTTP_PORT défaut 8080)
 #   Dashboard : http://localhost:3000  (admin / cf .env)
 ```
 
@@ -169,23 +171,33 @@ Toutes les variables sont dans [`.env.example`](.env.example) :
 | `ABUSEIPDB_API_KEY` | enrichissement réputation | *(vide → désactivé)* |
 | `GEOIP_DB_PATH` | base GeoLite2 | /data/geoip/GeoLite2-City.mmdb |
 | `GF_SECURITY_ADMIN_USER` / `GF_SECURITY_ADMIN_PASSWORD` | accès Grafana | admin |
+| `SSH_PORT` / `HTTP_PORT` / `FTP_PORT` / `TELNET_PORT` | ports hôte exposés | 22 / 8080 / 21 / 23 |
+| `FTP_PASV_MIN` / `FTP_PASV_MAX` | plage de ports FTP passif | 30000 / 30009 |
+| `FTP_MASQUERADE_ADDRESS` | adresse annoncée en passif (NAT/Docker distant) | *(vide)* |
 
 > Les services restent fonctionnels **sans** GeoIP ni AbuseIPDB : l'enrichissement
 > est simplement omis (dégradation gracieuse).
 
 ## Services exposés
 
-| Service | Port hôte | Port interne | Bannière (furtivité) |
-|---|---|---|---|
-| SSH | 22 | 2222 | `SSH-2.0-OpenSSH_9.2p1 Debian-2+deb12u3` |
-| HTTP | 80 | 8080 | `Server: Apache/2.4.57 (Debian)` |
-| FTP | 21 | 2121 | `220 (vsFTPd 3.0.5)` |
-| Telnet | 23 | 2323 | `Ubuntu 22.04.4 LTS` |
-| Analyzer API | *(interne)* | 8000 | — |
-| Grafana | 3000 | 3000 | — |
+| Service | Port hôte (défaut) | Variable | Port interne | Bannière (furtivité) |
+|---|---|---|---|---|
+| SSH | 22 | `SSH_PORT` | 2222 | `SSH-2.0-OpenSSH_9.2p1 Debian-2+deb12u3` |
+| HTTP | 8080 | `HTTP_PORT` | 8080 | `Server: Apache/2.4.57 (Debian)` |
+| FTP | 21 | `FTP_PORT` | 2121 | `220 (vsFTPd 3.0.5)` |
+| FTP (passif) | 30000-30009 | `FTP_PASV_MIN/MAX` | 30000-30009 | — |
+| Telnet | 23 | `TELNET_PORT` | 2323 | `Ubuntu 22.04.4 LTS` |
+| Analyzer API | *(interne)* | — | 8000 | — |
+| Grafana | 3000 | — | 3000 | — |
 
-Les ports bas (22/80/21/23) sont mappés vers des ports hauts internes : les
+Les ports bas (22/21/23) sont mappés vers des ports hauts internes : les
 conteneurs n'ont **pas** besoin de `NET_BIND_SERVICE`, ce qui permet `cap-drop ALL`.
+
+> **Ports configurables** — chaque port hôte est paramétrable via `.env` (ex.
+> `HTTP_PORT=80`). Le défaut HTTP est **8080** car le 80 est souvent déjà pris
+> (haproxy sous WSL, dvwa sous Kali). Le **mode passif FTP** utilise une plage de
+> ports **fixe** (30000-30009) publiée à l'identique : indispensable pour que
+> `LIST`/`RETR` fonctionnent à travers Docker (sinon « Connection refused »).
 
 ## Attaques de validation
 
@@ -270,7 +282,21 @@ pytest -q                                          # tests
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — deux jobs :
 
 1. **lint-sast-test** : `ruff` → `bandit` → `semgrep` → validation schéma → `pytest`.
-2. **build-scan** (matrice 5 images) : `docker build` → **Trivy** (échec sur CVE `CRITICAL`).
+2. **build-scan** (matrice 5 images, `fail-fast: false` pour voir le résultat de
+   chaque image) : `docker build` → **Trivy** (échec sur CVE `CRITICAL`).
+
+> **Trivy `scanners: vuln`** — le scan est volontairement restreint aux
+> **vulnérabilités** (le gate CVE `CRITICAL` reste actif). Le *secret-scanner* est
+> désactivé : un honeypot **contient par nature** de faux secrets-appâts (ex. le
+> faux `api_key=sk_live_...` de `secrets.txt`) que Trivy prendrait pour de vraies
+> clés Stripe — ce sont des leurres délibérés, pas des fuites.
+>
+> `trivy-action` est épinglé en **v0.36.0** (les tags antérieurs cassaient sur la
+> dépendance interne `setup-trivy@v0.2.2`, supprimée en amont).
+
+Le packaging Python est explicite (`[tool.setuptools.packages.find]` →
+`honeypots*`, `analyzer*`) pour éviter l'échec d'auto-découverte *flat-layout* de
+setuptools lors de `pip install -e ".[dev]"`.
 
 ## Durcissement (sécurité)
 
@@ -316,11 +342,13 @@ Audit mesuré avant/après dans
 | Grafana « no data » | vérifier que `shipper` et `analyzer` tournent ; la base se remplit après les premières attaques |
 | Pas d'enrichissement géo | `data/geoip/GeoLite2-City.mmdb` absent → dégradation normale |
 | `abuse_score` toujours absent | `ABUSEIPDB_API_KEY` vide ou quota épuisé |
-| Port 22/80 déjà utilisé | arrêter le service hôte ou remapper dans `infra/docker-compose.yml` (HTTP est déjà sur 8080) |
+| Port 22/80/21/23 déjà utilisé | remapper via `.env` (`SSH_PORT`/`HTTP_PORT`/`FTP_PORT`/`TELNET_PORT`) — HTTP est déjà sur 8080 par défaut |
+| FTP `LIST`/`RETR` « Connection refused » | mode passif : la plage `FTP_PASV_MIN/MAX` doit être publiée à l'identique dans `docker-compose.yml` ; derrière NAT, définir `FTP_MASQUERADE_ADDRESS` |
 | `localhost:3000` injoignable | Grafana doit être sur le réseau `hp_exposed` (pas seulement `hp_internal`) ; sinon `docker compose up -d --force-recreate grafana` |
 | Login Grafana 401 avec admin/admin | conteneur périmé (mot de passe vide) → `docker compose up -d --force-recreate grafana` |
 | `curl` demande une `Uri:` (Windows) | `curl` est un alias PowerShell → utiliser `curl.exe` |
-| CI rouge sur Trivy | mettre à jour l'image de base / dépendances signalées CRITICAL |
+| CI rouge sur Trivy (CVE) | mettre à jour l'image de base / dépendances signalées CRITICAL |
+| CI rouge sur Trivy (« secret ») | les appâts du honeypot sont des faux secrets : le secret-scanner est désactivé (`scanners: vuln`) — ne pas le réactiver |
 
 > Détail des tests et du dépannage sous Windows : [docs/guide-test-windows.md](docs/guide-test-windows.md).
 

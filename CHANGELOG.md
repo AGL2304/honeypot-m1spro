@@ -7,6 +7,25 @@ et le projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Modifié
+- **Ports hôte configurables** via `.env` (`SSH_PORT`/`HTTP_PORT`/`FTP_PORT`/
+  `TELNET_PORT`) ; défaut HTTP porté à **8080** (le 80 est souvent déjà pris sous
+  WSL/Kali).
+- **CI Trivy** restreinte aux vulnérabilités (`scanners: vuln`) : le secret-scanner
+  signalait les faux secrets-appâts du honeypot comme de vraies clés Stripe. Le gate
+  CVE `CRITICAL` reste actif. `trivy-action` épinglé en **v0.36.0** (les tags
+  antérieurs cassaient sur `setup-trivy@v0.2.2`) ; `fail-fast: false` sur la matrice.
+- **Packaging** : déclaration explicite des packages (`[tool.setuptools.packages.find]`)
+  pour réparer `pip install -e ".[dev]"` (échec d'auto-découverte flat-layout).
+
+### Corrigé
+- **FTP** : authorizer réellement permissif (accepte tout couple user/mot de passe),
+  l'événement `auth_success` porte désormais le mot de passe validé, et le **mode
+  passif** fonctionne sous Docker (plage de ports fixe 30000-30009 publiée).
+- **Grafana** : dashboard enrichi + UID de datasource stable (`honeypot-pg`).
+- **Lint** : `isinstance` avec type union (ruff UP038) dans `analyzer/exports.py`.
+- **Déploiement** : stack rendue fonctionnelle et testable sous Windows et Kali.
+
 ### À venir (P4 → P5)
 - Audit de détectabilité réel sur cible exposée : remplir
   `docs/stealth-audit-initial.md` et `docs/stealth-audit-final.md` (scores /30).
