@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Secrets / env
+.env
+*.local
+
+# Données runtime
+logs/
+*.jsonl
+data/geoip/*.mmdb
+exports/*.iptables
+exports/iocs.json
+exports/rules/*.yml
+
+# Divers
+.DS_Store
+*.log
+
+# Editeur
+.vscode/

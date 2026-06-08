@@ -1,0 +1,156 @@
+# Orchestration complète (B12). `docker compose up` relance toute la stack.
+# Durcissement : non-root (1000:1000), read-only rootfs, cap-drop ALL, no-new-privileges.
+# Les ports bas exposés (22/80/21/23) sont mappés vers des ports hauts internes.
+
+name: honeypot-m1spro
+
+x-hardening: &hardening
+  read_only: true
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  restart: unless-stopped
+
+networks:
+  hp_exposed:
+    driver: bridge
+  hp_internal:
+    driver: bridge
+    internal: true
+
+volumes:
+  logs:
+  pgdata:
+  sshkeys:
+  enrich_data:
+
+services:
+  honeypot-ssh:
+    <<: *hardening
+    build:
+      context: ..
+      dockerfile: honeypots/ssh/Dockerfile
+    image: honeypot/ssh:1.0.0
+    ports:
+      - "22:2222"
+    volumes:
+      - logs:/logs
+      - sshkeys:/keys
+    networks: [hp_exposed]
+
+  honeypot-http:
+    <<: *hardening
+    build:
+      context: ..
+      dockerfile: honeypots/http/Dockerfile
+    image: honeypot/http:1.0.0
+    ports:
+      - "80:8080"
+    volumes:
+      - logs:/logs
+    networks: [hp_exposed]
+
+  honeypot-ftp:
+    <<: *hardening
+    build:
+      context: ..
+      dockerfile: honeypots/ftp/Dockerfile
+    image: honeypot/ftp:1.0.0
+    ports:
+      - "21:2121"
+    tmpfs:
+      - /tmp
+    volumes:
+      - logs:/logs
+    networks: [hp_exposed]
+
+  honeypot-telnet:
+    <<: *hardening
+    build:
+      context: ..
+      dockerfile: honeypots/telnet/Dockerfile
+    image: honeypot/telnet:1.0.0
+    ports:
+      - "23:2323"
+    volumes:
+      - logs:/logs
+    networks: [hp_exposed]
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-honeypot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-honeypot}
+      POSTGRES_DB: ${POSTGRES_DB:-honeypot}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [hp_internal]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-honeypot}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  analyzer:
+    build:
+      context: ..
+      dockerfile: analyzer/Dockerfile
+    image: honeypot/analyzer:1.0.0
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-honeypot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-honeypot}
+      POSTGRES_DB: ${POSTGRES_DB:-honeypot}
+      ABUSEIPDB_API_KEY: ${ABUSEIPDB_API_KEY:-}
+      GEOIP_DB_PATH: /data/geoip/GeoLite2-City.mmdb
+    read_only: true
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    tmpfs:
+      - /tmp
+    volumes:
+      - enrich_data:/data
+      - ../data/geoip:/data/geoip:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [hp_internal]
+    restart: unless-stopped
+
+  shipper:
+    image: honeypot/analyzer:1.0.0
+    command: ["python", "-m", "analyzer.shipper"]
+    environment:
+      ANALYZER_URL: http://analyzer:8000
+      HONEYPOT_LOG_DIR: /logs
+    read_only: true
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    volumes:
+      - logs:/logs
+      - ../exports:/app/exports
+    depends_on: [analyzer]
+    networks: [hp_internal, hp_exposed]
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-admin}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-honeypot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-honeypot}
+      POSTGRES_DB: ${POSTGRES_DB:-honeypot}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../dashboard/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../dashboard/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on: [postgres]
+    networks: [hp_internal]
+    restart: unless-stopped

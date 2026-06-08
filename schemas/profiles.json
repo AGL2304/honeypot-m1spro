@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Définition chiffrée des 4 profils attaquants (B3). Seuils utilisés par analyzer/classifier.py.",
+  "profiles": {
+    "bot": {
+      "label": "Bot automatisé",
+      "description": "Connexions très rapides, peu/pas de commandes interactives, intervalle quasi constant.",
+      "criteria": {
+        "max_session_duration_s": 5,
+        "max_commands": 1,
+        "min_auth_attempts": 1,
+        "max_mean_interval_ms": 200,
+        "interval_stddev_max_ms": 80
+      }
+    },
+    "bruteforcer": {
+      "label": "Bruteforce / credential stuffing",
+      "description": "Grand nombre de tentatives d'authentification, faible diversité de commandes.",
+      "criteria": {
+        "min_auth_attempts": 20,
+        "min_distinct_passwords": 15,
+        "max_commands": 2,
+        "max_mean_interval_ms": 1500
+      }
+    },
+    "humain": {
+      "label": "Opérateur humain",
+      "description": "Rythme irrégulier, commandes variées et contextuelles, fautes de frappe, pauses longues.",
+      "criteria": {
+        "min_commands": 3,
+        "min_mean_interval_ms": 800,
+        "interval_stddev_min_ms": 400,
+        "min_distinct_commands": 3,
+        "typo_tolerance": true
+      }
+    },
+    "scanner_legitime": {
+      "label": "Scanner légitime / recherche",
+      "description": "Sources connues (GreyNoise RIOT, moteurs de scan), bannière-grabbing sans exploitation.",
+      "criteria": {
+        "max_auth_attempts": 2,
+        "max_commands": 0,
+        "single_connect_then_close": true,
+        "known_scanner_asn": true
+      }
+    }
+  },
+  "priority_order": ["scanner_legitime", "bruteforcer", "bot", "humain"]
+}

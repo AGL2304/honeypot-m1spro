@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ecole-it.fr/m1spro/event.schema.json",
+  "title": "HoneypotEvent",
+  "description": "Contrat de log unifié v1.0.0 émis par tous les services honeypot.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "event_id",
+    "timestamp",
+    "service",
+    "src_ip",
+    "src_port",
+    "session_id",
+    "event_type"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "event_id": {
+      "type": "string",
+      "description": "UUID v4 unique de l'événement"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Horodatage UTC ISO-8601"
+    },
+    "service": {
+      "type": "string",
+      "enum": ["ssh", "http", "ftp", "telnet"]
+    },
+    "src_ip": {
+      "type": "string",
+      "description": "IP source (anonymisable selon la charte)"
+    },
+    "src_port": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "dst_port": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "session_id": {
+      "type": "string",
+      "description": "Identifiant de session (regroupe les événements d'une même connexion)"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "connect",
+        "auth_attempt",
+        "auth_success",
+        "command",
+        "http_request",
+        "ftp_command",
+        "file_access",
+        "disconnect"
+      ]
+    },
+    "username": { "type": ["string", "null"] },
+    "password": { "type": ["string", "null"] },
+    "command": { "type": ["string", "null"] },
+    "http": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "method": { "type": "string" },
+        "path": { "type": "string" },
+        "query": { "type": ["string", "null"] },
+        "headers": { "type": "object" },
+        "body": { "type": ["string", "null"] },
+        "user_agent": { "type": ["string", "null"] }
+      }
+    },
+    "raw": {
+      "type": ["string", "null"],
+      "description": "Charge utile brute capturée (tronquée si trop longue)"
+    },
+    "enrichment": {
+      "type": "object",
+      "description": "Renseigné par l'analyzer (geo + réputation), absent à l'émission",
+      "additionalProperties": true
+    },
+    "classification": {
+      "type": ["string", "null"],
+      "enum": ["bot", "bruteforcer", "humain", "scanner_legitime", null]
+    }
+  }
+}

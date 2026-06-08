@@ -1,0 +1,57 @@
+[project]
+name = "honeypot-m1spro"
+version = "1.0.0"
+description = "Honeypot multi-services M1SPRO - SSH/HTTP/FTP/Telnet + pipeline d'analyse"
+requires-python = ">=3.12"
+dependencies = [
+    "asyncssh>=2.14",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "pyftpdlib>=1.5.10",
+    "jsonschema>=4.21",
+    "maxminddb>=2.6",
+    "httpx>=0.27",
+    "psycopg[binary]>=3.1",
+    "pydantic>=2.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.4",
+    "bandit>=1.7",
+    "semgrep>=1.60",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S"]
+# S603/S607 (subprocess) tolérés dans les scripts d'attaque internes
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106"]
+"attacks/*" = ["S603", "S607"]
+# Faux /etc/passwd appât : ce n'est pas un secret réel.
+"honeypots/common/fakeshell.py" = ["S105"]
+# Exposition réseau volontaire (le honeypot DOIT écouter sur 0.0.0.0).
+"honeypots/ssh/server.py" = ["S104"]
+"honeypots/http/server.py" = ["S104"]
+"honeypots/telnet/server.py" = ["S104"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.bandit]
+exclude_dirs = ["tests", "attacks"]
+# Patterns inhérents et volontaires pour un honeypot (justifiés) :
+#   B104 : les services DOIVENT écouter sur 0.0.0.0 (exposition volontaire)
+#   B105 : faux /etc/passwd appât, pas un secret réel
+#   B110 : le shipper ne doit jamais mourir si un export échoue
+#   B311 : random non-cryptographique utilisé pour le jitter de furtivité
+skips = ["B104", "B105", "B110", "B311"]

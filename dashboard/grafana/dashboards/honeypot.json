@@ -1,0 +1,98 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "title": "Honeypot M1SPRO - Live",
+  "uid": "honeypot-live",
+  "tags": ["honeypot", "m1spro"],
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": { "from": "now-6h", "to": "now" },
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Événements totaux",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "postgres" },
+      "targets": [
+        { "rawSql": "SELECT COUNT(*) AS value FROM events", "format": "table" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "IP uniques",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "postgres" },
+      "targets": [
+        { "rawSql": "SELECT COUNT(DISTINCT src_ip) AS value FROM events", "format": "table" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Tentatives d'auth",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "postgres" },
+      "targets": [
+        { "rawSql": "SELECT COUNT(*) AS value FROM events WHERE event_type='auth_attempt'", "format": "table" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Score abuse max",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "postgres" },
+      "targets": [
+        { "rawSql": "SELECT COALESCE(MAX(abuse_score),0) AS value FROM events", "format": "table" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Événements par service (time-series)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "datasource": { "type": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT date_trunc('minute', ts) AS time, service AS metric, COUNT(*) AS value FROM events WHERE $__timeFilter(ts) GROUP BY 1,2 ORDER BY 1",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "type": "piechart",
+      "title": "Répartition des profils attaquants",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "datasource": { "type": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT classification AS metric, COUNT(*) AS value FROM events WHERE classification IS NOT NULL GROUP BY classification",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "type": "geomap",
+      "title": "Sources géolocalisées",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 12 },
+      "datasource": { "type": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT latitude, longitude, COUNT(*) AS value, country FROM events WHERE latitude IS NOT NULL GROUP BY latitude, longitude, country",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Top credentials tentés",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 12 },
+      "datasource": { "type": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT username, password, COUNT(*) AS attempts FROM events WHERE event_type='auth_attempt' GROUP BY username, password ORDER BY attempts DESC LIMIT 15",
+          "format": "table"
+        }
+      ]
+    }
+  ]
+}
