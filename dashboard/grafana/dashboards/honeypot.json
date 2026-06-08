@@ -8,7 +8,7 @@
   "refresh": "5s",
   "time": { "from": "now-24h", "to": "now" },
   "schemaVersion": 39,
-  "version": 2,
+  "version": 3,
   "panels": [
     {
       "type": "stat",
@@ -72,7 +72,7 @@
       "title": "Répartition par service",
       "gridPos": { "h": 8, "w": 10, "x": 14, "y": 4 },
       "datasource": { "type": "postgres", "uid": "honeypot-pg" },
-      "options": { "pieType": "donut", "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] } },
+      "options": { "pieType": "donut", "reduceOptions": { "values": true, "calcs": [] }, "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] } },
       "targets": [
         {
           "rawSql": "SELECT service AS metric, COUNT(*) AS value FROM events GROUP BY service ORDER BY value DESC",
@@ -109,7 +109,7 @@
       "title": "Répartition par type d'événement",
       "gridPos": { "h": 8, "w": 8, "x": 16, "y": 12 },
       "datasource": { "type": "postgres", "uid": "honeypot-pg" },
-      "options": { "pieType": "pie", "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] } },
+      "options": { "pieType": "pie", "reduceOptions": { "values": true, "calcs": [] }, "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] } },
       "targets": [
         {
           "rawSql": "SELECT event_type AS metric, COUNT(*) AS value FROM events GROUP BY event_type ORDER BY value DESC",
@@ -171,7 +171,7 @@
       "title": "Profils attaquants (classification)",
       "gridPos": { "h": 9, "w": 12, "x": 12, "y": 28 },
       "datasource": { "type": "postgres", "uid": "honeypot-pg" },
-      "options": { "pieType": "donut", "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] } },
+      "options": { "pieType": "donut", "reduceOptions": { "values": true, "calcs": [] }, "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] } },
       "targets": [
         {
           "rawSql": "SELECT classification AS metric, COUNT(*) AS value FROM events WHERE classification IS NOT NULL GROUP BY classification ORDER BY value DESC",
