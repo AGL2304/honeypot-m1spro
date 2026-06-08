@@ -48,6 +48,8 @@ ignore = ["S101"]
 "attacks/*" = ["S603", "S607"]
 # Faux /etc/passwd appât : ce n'est pas un secret réel.
 "honeypots/common/fakeshell.py" = ["S105"]
+# Génération de jeux de test synthétiques (pas un usage cryptographique).
+"analyzer/evaluate.py" = ["S311"]
 # Exposition réseau volontaire (le honeypot DOIT écouter sur 0.0.0.0).
 "honeypots/ssh/server.py" = ["S104"]
 "honeypots/http/server.py" = ["S104"]

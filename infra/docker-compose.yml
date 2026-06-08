@@ -130,6 +130,13 @@ services:
     environment:
       ANALYZER_URL: http://analyzer:8000
       HONEYPOT_LOG_DIR: /logs
+      # Le shipper regénère les exports (B17/B24) via db.attackers() : il lui faut
+      # donc l'accès PostgreSQL, au même titre que l'analyzer.
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-honeypot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-honeypot}
+      POSTGRES_DB: ${POSTGRES_DB:-honeypot}
     read_only: true
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]

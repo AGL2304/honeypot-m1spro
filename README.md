@@ -323,8 +323,8 @@ Audit mesuré avant/après dans
 | P0 — Fondations | B0–B1 | ✅ charte RGPD + note de cadrage |
 | P1 — Premier service | B2–B5 | ✅ repo, CI, schéma, SSH, script Hydra |
 | P2 — Multi-protocole | B6–B12 | ✅ faux shell, HTTP, FTP, Telnet, shipper, durcissement |
-| P3 — Pipeline d'analyse | B13–B17 | ✅ API, classifier, enrichers, Grafana, exports |
-| P4 — Furtivité mesurée | B18–B22 | 🟡 mécanismes en place, **audits à remplir sur cible réelle** |
+| P3 — Pipeline d'analyse | B13–B17 | ✅ API, classifier (matrice de confusion `python -m analyzer.evaluate`), enrichers, Grafana, exports |
+| P4 — Furtivité mesurée | B18–B22 | 🟡 bannières/faux fs riche/jitter en place (B19-B21) ; **audits /30 à remplir sur stack lancée (B18/B22)** |
 | P5 — Restitution (BYOD/LAN) | B23–B25 | ⏳ J5 (rejeu de datasets + attaques inter-équipes sur le LAN, démo jury) |
 
 ## Cadre légal & éthique

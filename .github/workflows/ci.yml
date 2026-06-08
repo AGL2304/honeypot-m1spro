@@ -37,6 +37,9 @@ jobs:
       - name: Validate JSON Schema fixtures (B9)
         run: python -m pytest tests/test_schema.py -q
 
+      - name: Matrice de confusion classifier (B14)
+        run: python -m analyzer.evaluate
+
       - name: Pytest
         run: pytest -q
 

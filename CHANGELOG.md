@@ -7,6 +7,18 @@ et le projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+- **Métrique de classification mesurée (B14)** : `analyzer/evaluate.py` génère un
+  jeu de sessions étiquetées déterministe, calcule la **matrice de confusion** et
+  la précision/rappel/F1 par profil (`python -m analyzer.evaluate`). Seuil **> 85 %**
+  verrouillé en CI par `tests/test_classifier_metrics.py`.
+- **Faux filesystem enrichi (B20)** : 40+ fichiers appâts navigables via `cd`/`ls`/
+  `cat` (résolution de chemins ~, relatifs, `..`), dont `~/.ssh/{known_hosts,
+  authorized_keys,id_rsa,config}`, `~/Documents/` (passwords.txt, budget…) et
+  `~/projects/{webapp,api,scripts}` (.env appâts, scripts de déploiement).
+- **Réponses système complétées (B21)** : commandes `who`, `last`, `uptime`,
+  `/proc/meminfo`, `/proc/version` ajoutées au faux shell.
+
 ### Modifié
 - **Alignement P5 sur le syllabus révisé (07/05/2026, sans VPS)** : la doc
   (`README.md`, `docs/note-cadrage.md`, `docs/charte-rgpd.md`, audits de
@@ -25,6 +37,15 @@ et le projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
   pour réparer `pip install -e ".[dev]"` (échec d'auto-découverte flat-layout).
 
 ### Corrigé
+- **Exports défensifs (B17/B24) cassés en production** — détectés en test bout-en-bout :
+  1. le service **shipper** régénère les exports via `db.attackers()` mais le compose
+     ne lui passait pas les identifiants PostgreSQL → `connection refused` avalé
+     silencieusement par `_trigger_exports()`. Variables `POSTGRES_*` ajoutées au
+     service `shipper`.
+  2. `analyzer/exports.py` plantait sur `'IPv4Address' object has no attribute
+     'replace'` : `db.attackers()` renvoie `src_ip` comme objet INET (psycopg), pas
+     comme `str`. Normalisation `str(a["src_ip"])` dans blocklist/sigma/stix +
+     test de non-régression `tests/test_exports.py`.
 - **FTP** : authorizer réellement permissif (accepte tout couple user/mot de passe),
   l'événement `auth_success` porte désormais le mot de passe validé, et le **mode
   passif** fonctionne sous Docker (plage de ports fixe 30000-30009 publiée).

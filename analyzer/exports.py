@@ -35,7 +35,7 @@ def generate_blocklist() -> Path:
     _EXPORT_DIR.mkdir(parents=True, exist_ok=True)
     lines = ["# Généré automatiquement - block_list.iptables"]
     for a in _critical_attackers():
-        ip = a["src_ip"]
+        ip = str(a["src_ip"])
         lines.append(f"-A INPUT -s {ip} -j DROP")
     path = _EXPORT_DIR / "block_list.iptables"
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -46,7 +46,7 @@ def generate_sigma() -> list[Path]:
     _RULES_DIR.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
     for a in _critical_attackers():
-        ip = a["src_ip"]
+        ip = str(a["src_ip"])
         rule = {
             "title": f"Activité honeypot malveillante depuis {ip}",
             "id": str(uuid.uuid4()),
@@ -71,7 +71,7 @@ def generate_stix() -> Path:
     now = datetime.now(UTC).isoformat()
     objects: list[dict[str, Any]] = []
     for a in _critical_attackers():
-        ip = a["src_ip"]
+        ip = str(a["src_ip"])
         objects.append(
             {
                 "type": "indicator",

@@ -4,8 +4,9 @@ Classe une session selon les 4 profils définis dans schemas/profiles.json :
 bot, bruteforcer, humain, scanner_legitime. L'ordre de priorité évite les
 ambiguïtés (un scanner connu prime sur un bruteforce, etc.).
 
-Métriques : utiliser tests/test_classifier.py + matrice de confusion sur les logs
-J2 pour viser une précision > 85% sur les sessions Hydra et Nikto.
+Métriques : `python -m analyzer.evaluate` produit la matrice de confusion et la
+précision/rappel par profil (objectif > 85% sur Hydra/bruteforcer et Nikto/scanner).
+Le seuil est verrouillé en CI par tests/test_classifier_metrics.py.
 """
 
 from __future__ import annotations
