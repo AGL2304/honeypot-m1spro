@@ -33,7 +33,7 @@ services:
       dockerfile: honeypots/ssh/Dockerfile
     image: honeypot/ssh:1.0.0
     ports:
-      - "22:2222"
+      - "${SSH_PORT:-22}:2222"
     volumes:
       - logs:/logs
       - sshkeys:/keys
@@ -46,9 +46,9 @@ services:
       dockerfile: honeypots/http/Dockerfile
     image: honeypot/http:1.0.0
     ports:
-      # Port hote 80 occupe par haproxy (dans la distro Ubuntu WSL) -> remappe sur 8080.
-      # Pour revenir au port 80 realiste : arreter haproxy dans Ubuntu puis remettre "80:8080".
-      - "8080:8080"
+      # Port hote configurable. Defaut 8080 (sur WSL le 80 est pris par haproxy ;
+      # sur Kali le 8080 est pris par dvwa -> lancer avec HTTP_PORT=80).
+      - "${HTTP_PORT:-8080}:8080"
     volumes:
       - logs:/logs
     networks: [hp_exposed]
@@ -60,7 +60,7 @@ services:
       dockerfile: honeypots/ftp/Dockerfile
     image: honeypot/ftp:1.0.0
     ports:
-      - "21:2121"
+      - "${FTP_PORT:-21}:2121"
     tmpfs:
       - /tmp
     volumes:
@@ -74,7 +74,7 @@ services:
       dockerfile: honeypots/telnet/Dockerfile
     image: honeypot/telnet:1.0.0
     ports:
-      - "23:2323"
+      - "${TELNET_PORT:-23}:2323"
     volumes:
       - logs:/logs
     networks: [hp_exposed]
