@@ -99,7 +99,7 @@ def _to_yaml(rule: dict[str, Any]) -> str:
         out: list[str] = []
         if isinstance(obj, dict):
             for k, v in obj.items():
-                if isinstance(v, (dict, list)):
+                if isinstance(v, dict | list):
                     out.append(f"{pad}{k}:")
                     out.extend(emit(v, indent + 1))
                 else:
