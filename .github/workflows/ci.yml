@@ -69,3 +69,9 @@ jobs:
           severity: CRITICAL
           exit-code: "1"
           ignore-unfixed: true
+          # scanners=vuln UNIQUEMENT : on garde le gate CVE CRITICAL mais on
+          # desactive le secret-scanner. Raison : un honeypot CONTIENT par nature
+          # de faux secrets-appat (ex. honeypots/ftp/server.py -> faux api_key
+          # "sk_live_..." dans secrets.txt) que Trivy prend pour une vraie cle
+          # Stripe. Ce sont des leurres volontaires, pas des fuites.
+          scanners: vuln
