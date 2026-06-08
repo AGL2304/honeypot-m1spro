@@ -6,6 +6,12 @@ RUN pip install --no-cache-dir \
     "psycopg[binary]>=3.1" "httpx>=0.27" "maxminddb>=2.6"
 RUN useradd --uid 1000 --create-home --shell /usr/sbin/nologin appuser
 
+# Le cache SQLite d'AbuseIPDB s'écrit dans /data (volume enrich_data) et le
+# shipper (qui reutilise cette image) lit/ecrit /logs. Créer les dossiers et les
+# attribuer à l'uid 1000 pour que les volumes nommés héritent de cette propriété
+# à leur création (sinon root:root -> écriture refusée).
+RUN mkdir -p /data /logs && chown 1000:1000 /data /logs
+
 WORKDIR /app
 COPY analyzer/ ./analyzer/
 COPY honeypots/common/ ./honeypots/common/

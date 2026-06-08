@@ -46,7 +46,9 @@ services:
       dockerfile: honeypots/http/Dockerfile
     image: honeypot/http:1.0.0
     ports:
-      - "80:8080"
+      # Port hote 80 occupe par haproxy (dans la distro Ubuntu WSL) -> remappe sur 8080.
+      # Pour revenir au port 80 realiste : arreter haproxy dans Ubuntu puis remettre "80:8080".
+      - "8080:8080"
     volumes:
       - logs:/logs
     networks: [hp_exposed]
@@ -152,5 +154,7 @@ services:
       - ../dashboard/grafana/provisioning:/etc/grafana/provisioning:ro
       - ../dashboard/grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on: [postgres]
-    networks: [hp_internal]
+    # hp_internal : acces a PostgreSQL. hp_exposed : indispensable pour publier
+    # le port 3000 vers l'hote (un reseau internal:true interdit le port mapping).
+    networks: [hp_internal, hp_exposed]
     restart: unless-stopped

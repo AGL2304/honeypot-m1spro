@@ -17,6 +17,7 @@ venv/
 logs/
 *.jsonl
 data/geoip/*.mmdb
+data/rockyou*.txt
 exports/*.iptables
 exports/iocs.json
 exports/rules/*.yml

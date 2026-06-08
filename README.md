@@ -189,18 +189,33 @@ conteneurs n'ont **pas** besoin de `NET_BIND_SERVICE`, ce qui permet `cap-drop A
 
 ## Attaques de validation
 
-Depuis la VM Kali (ou en local avec les outils installés) :
+Depuis la VM Kali (ou en local avec les outils installés). Les scripts ciblent
+par défaut les **ports hôtes** du déploiement (SSH 22, HTTP 80, FTP 21) et se
+lancent **depuis la racine du repo** :
 
 ```bash
-bash attacks/run_all.sh <ip_honeypot>          # batterie complète (B fin J2)
-bash attacks/run_ssh_bruteforce.sh <ip> 2222   # Hydra SSH
-bash attacks/run_http_scan.sh <ip> 8080        # Nikto + dirsearch + curl
-bash attacks/run_ftp_brute.sh <ip> 2121        # Hydra FTP
+bash attacks/run_all.sh <ip_honeypot>        # batterie complète
+bash attacks/run_ssh_bruteforce.sh <ip> 22   # Hydra SSH
+bash attacks/run_http_scan.sh <ip> 80        # Nikto (si présent) + curl
+bash attacks/run_ftp_brute.sh <ip> 21        # Hydra FTP
 ```
+
+**Wordlist** : auto-détectée (variable `WORDLIST`, sinon `data/rockyou-top1000.txt`,
+sinon `rockyou` système de Kali `/usr/share/wordlists/rockyou.txt[.gz]`). Le nombre
+d'essais est plafonné par `MAX_TRIES` (défaut 200). Exemple :
+`WORDLIST=/usr/share/wordlists/rockyou.txt MAX_TRIES=500 bash attacks/run_ssh_bruteforce.sh`.
 
 Chaque script appelle ensuite `attacks/assert_logs.py` : **échec** (exit ≠ 0) si le
 nombre d'événements capturés est trop faible ou si une ligne n'est pas conforme au
-schéma. C'est la garantie automatisée de la chaîne de capture.
+schéma. Comme les logs vivent dans un **volume Docker nommé** (`logs:/logs`), la
+vérification les extrait du volume via `docker exec` (cf. `attacks/_lib.sh`) — il
+n'y a **pas** de dossier `./logs` côté hôte. La source de vérité finale reste la
+table `events` de PostgreSQL.
+
+> **Sous Windows / PowerShell** (sans VM Kali), suivre le
+> [guide de test manuel](docs/guide-test-windows.md) : commandes natives pour
+> tester chaque honeypot (HTTP/FTP/Telnet/SSH), vérifier la base PostgreSQL et
+> Grafana, avec les pièges Windows (alias `curl`, port 80, réseau Grafana).
 
 ## Pipeline d'analyse
 
@@ -301,8 +316,13 @@ Audit mesuré avant/après dans
 | Grafana « no data » | vérifier que `shipper` et `analyzer` tournent ; la base se remplit après les premières attaques |
 | Pas d'enrichissement géo | `data/geoip/GeoLite2-City.mmdb` absent → dégradation normale |
 | `abuse_score` toujours absent | `ABUSEIPDB_API_KEY` vide ou quota épuisé |
-| Port 22/80 déjà utilisé | arrêter le service hôte ou remapper dans `infra/docker-compose.yml` |
+| Port 22/80 déjà utilisé | arrêter le service hôte ou remapper dans `infra/docker-compose.yml` (HTTP est déjà sur 8080) |
+| `localhost:3000` injoignable | Grafana doit être sur le réseau `hp_exposed` (pas seulement `hp_internal`) ; sinon `docker compose up -d --force-recreate grafana` |
+| Login Grafana 401 avec admin/admin | conteneur périmé (mot de passe vide) → `docker compose up -d --force-recreate grafana` |
+| `curl` demande une `Uri:` (Windows) | `curl` est un alias PowerShell → utiliser `curl.exe` |
 | CI rouge sur Trivy | mettre à jour l'image de base / dépendances signalées CRITICAL |
+
+> Détail des tests et du dépannage sous Windows : [docs/guide-test-windows.md](docs/guide-test-windows.md).
 
 ## Équipe
 
