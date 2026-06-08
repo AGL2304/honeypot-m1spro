@@ -39,6 +39,41 @@ def _build_bait_root() -> str:
     return str(root)
 
 
+class PermissiveAuthorizer(DummyAuthorizer):
+    """Authorizer d'appât : accepte N'IMPORTE QUEL couple user/mot de passe.
+
+    Un vrai honeypot FTP doit laisser entrer l'attaquant pour observer ses actions
+    (LIST/RETR sur les fichiers piégés) et capturer le credential « qui marche ».
+    pyftpdlib considère l'auth réussie quand validate_authentication ne lève pas
+    d'exception ; on ne lève donc jamais.
+    """
+
+    def __init__(self, homedir: str) -> None:
+        super().__init__()
+        self._homedir = homedir
+
+    def validate_authentication(self, username, password, handler):  # noqa: ANN001, ARG002
+        return  # toujours OK
+
+    def has_user(self, username):  # noqa: ANN001, ARG002
+        return True
+
+    def get_home_dir(self, username):  # noqa: ANN001, ARG002
+        return self._homedir
+
+    def get_perms(self, username):  # noqa: ANN001, ARG002
+        return "elr"
+
+    def has_perm(self, username, perm, path=None):  # noqa: ANN001, ARG002
+        return perm in "elr"
+
+    def get_msg_login(self, username):  # noqa: ANN001, ARG002
+        return "Login successful."
+
+    def get_msg_quit(self, username):  # noqa: ANN001, ARG002
+        return "Goodbye."
+
+
 class HoneypotFTPHandler(FTPHandler):
     banner = f"220 ({BANNER})"
 
@@ -77,9 +112,9 @@ def _emit(handler: FTPHandler, event_type: str, **kw) -> None:
 
 
 def main() -> None:
-    authorizer = DummyAuthorizer()
-    # 'anonymous' + tout user grâce à un mot de passe accepté côté handler.
-    authorizer.add_anonymous(_build_bait_root(), perm="elr")
+    # Authorizer permissif : tout couple user/mot de passe est accepté, l'attaquant
+    # atterrit dans le faux filesystem appât (secrets.txt, db_dump.sql, backup.zip).
+    authorizer = PermissiveAuthorizer(_build_bait_root())
     handler = HoneypotFTPHandler
     handler.authorizer = authorizer
     server = FTPServer(("0.0.0.0", LISTEN_PORT), handler)  # noqa: S104
