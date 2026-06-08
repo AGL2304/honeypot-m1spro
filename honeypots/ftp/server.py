@@ -82,7 +82,10 @@ class HoneypotFTPHandler(FTPHandler):
         _emit(self, "connect")
 
     def on_login(self, username: str) -> None:
-        _emit(self, "auth_success", username=username)
+        # _last_password : credential effectivement validé (memorise dans ftp_PASS),
+        # pour que l'evenement auth_success porte le couple complet user/mot de passe.
+        _emit(self, "auth_success", username=username,
+              password=getattr(self, "_last_password", None))
 
     def on_file_sent(self, file: str) -> None:
         _emit(self, "file_access", command=f"RETR {Path(file).name}")
@@ -92,6 +95,7 @@ class HoneypotFTPHandler(FTPHandler):
         super().ftp_USER(line)
 
     def ftp_PASS(self, line: str) -> None:
+        self._last_password = line
         _emit(self, "auth_attempt", username=getattr(self, "username", None), password=line)
         super().ftp_PASS(line)
 
