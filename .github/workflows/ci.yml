@@ -58,7 +58,7 @@ jobs:
         run: docker build -f ${{ matrix.service.dockerfile }} -t honeypot/${{ matrix.service.name }}:ci .
 
       - name: Trivy scan (échec si CVE CRITICAL)
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@v0.29.0
         with:
           image-ref: honeypot/${{ matrix.service.name }}:ci
           severity: CRITICAL
