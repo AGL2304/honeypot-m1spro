@@ -91,9 +91,24 @@ C'est cohérent avec le syllabus révisé (BYOD/no-VPS) : le scénario « déplo
 public » qui justifiait ce panneau a été retiré. Le panneau porte désormais une
 **description info-bulle** expliquant ce comportement.
 
-**Pour l'allumer (optionnel, démo)** : déposer `data/geoip/GeoLite2-City.mmdb`
-**et** rejouer un dataset d'attaques à **IP publiques** (B23 — replay dataset).
-Vérification rapide du nombre d'events géolocalisés :
+**Pour l'allumer (B23 — replay dataset, SANS MaxMind) :**
+
+```bash
+bash attacks/replay_dataset.sh
+```
+
+Ce script rejoue `data/datasets/public-attacks.jsonl` : ~10 sources publiques
+(6 continents) dont chaque événement **porte sa propre géoloc** dans le champ
+`enrichment`. L'analyzer respecte cet enrichissement fourni quand l'enrichisseur
+live est vide (cf. `analyzer/enrichers/enrich()`), donc la carte s'allume **sans**
+base GeoLite2. Le dataset illustre aussi les 4 profils du classifieur
+(bruteforcer / bot / scanner_legitime / humain).
+
+> Alternative « réaliste » : déposer `data/geoip/GeoLite2-City.mmdb` (compte
+> école) **et** rejouer un dataset à vraies IP publiques — la géoloc vient alors
+> des enrichisseurs temps réel, prioritaires sur l'enrichissement fourni.
+
+Vérification du nombre d'events géolocalisés :
 
 ```bash
 dc exec -T postgres psql -U honeypot -d honeypot -tc \

@@ -18,6 +18,10 @@ logs/
 *.jsonl
 data/geoip/*.mmdb
 data/rockyou*.txt
+
+# Exception : dataset de replay versionné (B23)
+!data/datasets/
+!data/datasets/*.jsonl
 exports/*.iptables
 exports/iocs.json
 exports/rules/*.yml

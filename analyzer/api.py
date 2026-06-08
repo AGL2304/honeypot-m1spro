@@ -41,7 +41,7 @@ def ingest(event: dict[str, Any]) -> dict[str, Any]:
     except ValidationError as exc:
         raise HTTPException(status_code=422, detail=f"Schema invalide: {exc.message}") from exc
 
-    enrichment = enrich(event["src_ip"])
+    enrichment = enrich(event["src_ip"], event.get("enrichment"))
     db.insert_event(event, enrichment, classification=None)
 
     # Re-classifie la session complète à chaque nouvel événement.
