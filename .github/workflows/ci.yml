@@ -44,6 +44,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint-sast-test
     strategy:
+      # fail-fast desactive : on veut le resultat Trivy de CHAQUE image, pas une
+      # annulation en cascade des que la premiere echoue.
+      fail-fast: false
       matrix:
         service:
           - { name: ssh, dockerfile: honeypots/ssh/Dockerfile }
