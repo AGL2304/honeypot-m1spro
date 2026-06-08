@@ -212,6 +212,11 @@ bash attacks/run_http_scan.sh <ip> 80        # Nikto (si présent) + curl
 bash attacks/run_ftp_brute.sh <ip> 21        # Hydra FTP
 ```
 
+**Validation en une commande** — après une vague d'attaques, `bash attacks/smoke_test.sh
+<ip>` vérifie en PASS/FAIL : conteneurs *running*, ports honeypot ouverts, base
+PostgreSQL peuplée (`/stats`), classification active et exports défensifs générés
+(exit ≠ 0 si un contrôle échoue → utilisable en pré-démo ou en CI locale).
+
 **Wordlist** : auto-détectée (variable `WORDLIST`, sinon `data/rockyou-top1000.txt`,
 sinon `rockyou` système de Kali `/usr/share/wordlists/rockyou.txt[.gz]`). Le nombre
 d'essais est plafonné par `MAX_TRIES` (défaut 200). Exemple :
@@ -340,6 +345,7 @@ Audit mesuré avant/après dans
 | Symptôme | Piste |
 |---|---|
 | Grafana « no data » | vérifier que `shipper` et `analyzer` tournent ; la base se remplit après les premières attaques |
+| `analyzer` en `Restarting` + `password authentication failed for user "honeypot"` (→ Grafana vide) | le volume `pgdata` a **figé l'ancien mot de passe** (PostgreSQL ne l'inscrit qu'au 1er init). Réaligner **sans perte** : `docker compose exec -T postgres psql -U $POSTGRES_USER -c "ALTER USER $POSTGRES_USER PASSWORD '<valeur POSTGRES_PASSWORD du .env>';"` puis `docker compose restart analyzer shipper`. Même piège pour Grafana (volume) → reset live : `docker compose exec grafana grafana cli admin reset-admin-password <pass>`. ⚠️ Ne **jamais** faire `down -v` pour corriger ça : ça efface aussi le volume `logs` |
 | Pas d'enrichissement géo | `data/geoip/GeoLite2-City.mmdb` absent → dégradation normale |
 | `abuse_score` toujours absent | `ABUSEIPDB_API_KEY` vide ou quota épuisé |
 | Port 22/80/21/23 déjà utilisé | remapper via `.env` (`SSH_PORT`/`HTTP_PORT`/`FTP_PORT`/`TELNET_PORT`) — HTTP est déjà sur 8080 par défaut |
