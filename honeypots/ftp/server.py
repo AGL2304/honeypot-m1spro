@@ -20,6 +20,13 @@ from honeypots.common.events import EventWriter, build_event, new_session_id
 SERVICE = "ftp"
 LISTEN_PORT = int(os.environ.get("FTP_PORT", "2121"))
 BANNER = os.environ.get("FTP_BANNER", "vsFTPd 3.0.5")
+# Mode passif : plage de ports FIXE (sinon Docker ne peut pas publier les ports
+# data aleatoires -> LIST/RETR echouent avec "Connection refused"). Doit etre
+# publiee a l'identique dans docker-compose.yml.
+PASV_MIN = int(os.environ.get("FTP_PASV_MIN", "30000"))
+PASV_MAX = int(os.environ.get("FTP_PASV_MAX", "30009"))
+# Adresse annoncee au client en mode passif (utile derriere NAT/Docker distant).
+MASQUERADE = os.environ.get("FTP_MASQUERADE_ADDRESS")
 
 _writer = EventWriter(SERVICE)
 
@@ -121,6 +128,9 @@ def main() -> None:
     authorizer = PermissiveAuthorizer(_build_bait_root())
     handler = HoneypotFTPHandler
     handler.authorizer = authorizer
+    handler.passive_ports = range(PASV_MIN, PASV_MAX + 1)
+    if MASQUERADE:
+        handler.masquerade_address = MASQUERADE
     server = FTPServer(("0.0.0.0", LISTEN_PORT), handler)  # noqa: S104
     server.serve_forever()
 

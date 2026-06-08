@@ -61,6 +61,8 @@ services:
     image: honeypot/ftp:1.0.0
     ports:
       - "${FTP_PORT:-21}:2121"
+      # Plage data du mode passif (doit matcher FTP_PASV_MIN/MAX du serveur).
+      - "30000-30009:30000-30009"
     tmpfs:
       - /tmp
     volumes:
