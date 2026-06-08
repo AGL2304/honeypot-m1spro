@@ -6,51 +6,60 @@
   "tags": ["honeypot", "m1spro"],
   "timezone": "browser",
   "refresh": "5s",
-  "time": { "from": "now-6h", "to": "now" },
+  "time": { "from": "now-24h", "to": "now" },
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "panels": [
     {
       "type": "stat",
       "title": "Événements totaux",
       "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
-      "datasource": { "type": "postgres" },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "blue" } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/.*/" }, "colorMode": "background", "graphMode": "none" },
       "targets": [
         { "rawSql": "SELECT COUNT(*) AS value FROM events", "format": "table" }
       ]
     },
     {
       "type": "stat",
-      "title": "IP uniques",
+      "title": "IP sources uniques",
       "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
-      "datasource": { "type": "postgres" },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "purple" } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/.*/" }, "colorMode": "background", "graphMode": "none" },
       "targets": [
         { "rawSql": "SELECT COUNT(DISTINCT src_ip) AS value FROM events", "format": "table" }
       ]
     },
     {
       "type": "stat",
-      "title": "Tentatives d'auth",
+      "title": "Tentatives d'authentification",
       "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
-      "datasource": { "type": "postgres" },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "orange" } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/.*/" }, "colorMode": "background", "graphMode": "none" },
       "targets": [
         { "rawSql": "SELECT COUNT(*) AS value FROM events WHERE event_type='auth_attempt'", "format": "table" }
       ]
     },
     {
       "type": "stat",
-      "title": "Score abuse max",
+      "title": "Sessions uniques",
       "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
-      "datasource": { "type": "postgres" },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "green" } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/.*/" }, "colorMode": "background", "graphMode": "none" },
       "targets": [
-        { "rawSql": "SELECT COALESCE(MAX(abuse_score),0) AS value FROM events", "format": "table" }
+        { "rawSql": "SELECT COUNT(DISTINCT session_id) AS value FROM events", "format": "table" }
       ]
     },
     {
       "type": "timeseries",
-      "title": "Événements par service (time-series)",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
-      "datasource": { "type": "postgres" },
+      "title": "Événements par service (timeline)",
+      "gridPos": { "h": 8, "w": 14, "x": 0, "y": 4 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "bars", "fillOpacity": 60, "stacking": { "mode": "normal" } } } },
       "targets": [
         {
           "rawSql": "SELECT date_trunc('minute', ts) AS time, service AS metric, COUNT(*) AS value FROM events WHERE $__timeFilter(ts) GROUP BY 1,2 ORDER BY 1",
@@ -60,24 +69,13 @@
     },
     {
       "type": "piechart",
-      "title": "Répartition des profils attaquants",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
-      "datasource": { "type": "postgres" },
+      "title": "Répartition par service",
+      "gridPos": { "h": 8, "w": 10, "x": 14, "y": 4 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "options": { "pieType": "donut", "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] } },
       "targets": [
         {
-          "rawSql": "SELECT classification AS metric, COUNT(*) AS value FROM events WHERE classification IS NOT NULL GROUP BY classification",
-          "format": "table"
-        }
-      ]
-    },
-    {
-      "type": "geomap",
-      "title": "Sources géolocalisées",
-      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 12 },
-      "datasource": { "type": "postgres" },
-      "targets": [
-        {
-          "rawSql": "SELECT latitude, longitude, COUNT(*) AS value, country FROM events WHERE latitude IS NOT NULL GROUP BY latitude, longitude, country",
+          "rawSql": "SELECT service AS metric, COUNT(*) AS value FROM events GROUP BY service ORDER BY value DESC",
           "format": "table"
         }
       ]
@@ -85,11 +83,97 @@
     {
       "type": "table",
       "title": "Top credentials tentés",
-      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 12 },
-      "datasource": { "type": "postgres" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 12 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
       "targets": [
         {
-          "rawSql": "SELECT username, password, COUNT(*) AS attempts FROM events WHERE event_type='auth_attempt' GROUP BY username, password ORDER BY attempts DESC LIMIT 15",
+          "rawSql": "SELECT username, password, COUNT(*) AS tentatives FROM events WHERE event_type='auth_attempt' AND username IS NOT NULL GROUP BY username, password ORDER BY tentatives DESC LIMIT 20",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Top chemins HTTP visés",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 12 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "targets": [
+        {
+          "rawSql": "SELECT http_method AS methode, http_path AS chemin, COUNT(*) AS hits FROM events WHERE http_path IS NOT NULL GROUP BY http_method, http_path ORDER BY hits DESC LIMIT 20",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "type": "piechart",
+      "title": "Répartition par type d'événement",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 12 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "options": { "pieType": "pie", "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] } },
+      "targets": [
+        {
+          "rawSql": "SELECT event_type AS metric, COUNT(*) AS value FROM events GROUP BY event_type ORDER BY value DESC",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Top user-agents",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "targets": [
+        {
+          "rawSql": "SELECT user_agent AS user_agent, COUNT(*) AS hits FROM events WHERE user_agent IS NOT NULL AND user_agent <> '' GROUP BY user_agent ORDER BY hits DESC LIMIT 15",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Top IP sources",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "targets": [
+        {
+          "rawSql": "SELECT host(src_ip) AS ip, COUNT(*) AS evenements, COUNT(DISTINCT service) AS services, MAX(ts) AS derniere_activite FROM events GROUP BY src_ip ORDER BY evenements DESC LIMIT 15",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "type": "geomap",
+      "title": "Sources géolocalisées (déploiement public)",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 28 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "options": {
+        "view": { "id": "zero", "lat": 20, "lon": 0, "zoom": 1.5 },
+        "basemap": { "type": "default", "name": "Layer 0" },
+        "layers": [
+          {
+            "type": "markers",
+            "name": "Sources",
+            "location": { "mode": "coords", "latitude": "latitude", "longitude": "longitude" },
+            "config": { "showLegend": true, "style": { "color": { "fixed": "red" }, "size": { "field": "value", "min": 4, "max": 20 } } }
+          }
+        ]
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT latitude, longitude, country, COUNT(*) AS value FROM events WHERE latitude IS NOT NULL GROUP BY latitude, longitude, country",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "type": "piechart",
+      "title": "Profils attaquants (classification)",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 28 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "options": { "pieType": "donut", "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] } },
+      "targets": [
+        {
+          "rawSql": "SELECT classification AS metric, COUNT(*) AS value FROM events WHERE classification IS NOT NULL GROUP BY classification ORDER BY value DESC",
           "format": "table"
         }
       ]
