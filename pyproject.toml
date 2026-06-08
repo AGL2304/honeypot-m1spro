@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "honeypot-m1spro"
 version = "1.0.0"
@@ -23,6 +27,12 @@ dev = [
     "bandit>=1.7",
     "semgrep>=1.60",
 ]
+
+# Seuls honeypots/ et analyzer/ sont des packages Python installables ; les autres
+# dossiers top-level (data, infra, exports, schemas, attacks, dashboard) ne doivent
+# pas etre embarques -> on desactive l'auto-decouverte "flat-layout" de setuptools.
+[tool.setuptools.packages.find]
+include = ["honeypots*", "analyzer*"]
 
 [tool.ruff]
 line-length = 100
