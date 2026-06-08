@@ -144,6 +144,7 @@
     {
       "type": "geomap",
       "title": "Sources géolocalisées (déploiement public)",
+      "description": "Carte alimentée par l'enrichissement GeoIP (MaxMind GeoLite2). Vide en déploiement LAN/BYOD : les attaquants ont des IP privées (172.x, 192.168.x, 127.x) non géolocalisables, et la base GeoLite2 est optionnelle. Pour l'allumer : déposer data/geoip/GeoLite2-City.mmdb + rejouer un dataset à IP publiques (B23). Voir docs/attribution-ip-source.md.",
       "gridPos": { "h": 9, "w": 12, "x": 0, "y": 28 },
       "datasource": { "type": "postgres", "uid": "honeypot-pg" },
       "options": {

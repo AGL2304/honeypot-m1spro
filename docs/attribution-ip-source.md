@@ -71,6 +71,35 @@ print(json.load(urllib.request.urlopen('http://localhost:8000/attackers')))"
 # -> la vraie IP source apparaît, distincte de la gateway 172.x.0.1
 ```
 
+## Panneau « Sources géolocalisées » du dashboard (vide en LAN/BYOD)
+
+Le panneau geomap *« Sources géolocalisées (déploiement public) »* du dashboard
+Grafana est **vide par conception** dans notre déploiement, pour deux raisons
+cumulées :
+
+1. **IP privées non géolocalisables.** Le panneau interroge
+   `SELECT latitude, longitude ... WHERE latitude IS NOT NULL`. La latitude n'est
+   renseignée que par l'enricher GeoIP (`analyzer/enrichers/geoip.py`, base
+   MaxMind GeoLite2). MaxMind ne retourne **aucune** position pour les plages
+   privées/réservées (`172.x`, `192.168.x`, `127.x`) — or ce sont précisément nos
+   sources en LAN/BYOD. La colonne `latitude` reste donc `NULL`.
+2. **Base GeoLite2 optionnelle.** `data/geoip/GeoLite2-City.mmdb` (compte école)
+   est facultative ; absente, l'enricher renvoie `{}` et aucun event n'est
+   géolocalisé. C'est une dégradation prévue (cf. README §Dépannage).
+
+C'est cohérent avec le syllabus révisé (BYOD/no-VPS) : le scénario « déploiement
+public » qui justifiait ce panneau a été retiré. Le panneau porte désormais une
+**description info-bulle** expliquant ce comportement.
+
+**Pour l'allumer (optionnel, démo)** : déposer `data/geoip/GeoLite2-City.mmdb`
+**et** rejouer un dataset d'attaques à **IP publiques** (B23 — replay dataset).
+Vérification rapide du nombre d'events géolocalisés :
+
+```bash
+dc exec -T postgres psql -U honeypot -d honeypot -tc \
+  "SELECT count(*) FILTER (WHERE latitude IS NOT NULL) AS geoloc, count(*) AS total FROM events;"
+```
+
 ## Pistes production (hors périmètre BYOD)
 
 - Déploiement avec IP publique dédiée par service (pas de SNAT parasite).
