@@ -8,6 +8,12 @@ et le projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
 ## [Non publié]
 
 ### Modifié
+- **Alignement P5 sur le syllabus révisé (07/05/2026, sans VPS)** : la doc
+  (`README.md`, `docs/note-cadrage.md`, `docs/charte-rgpd.md`, audits de
+  détectabilité) ne décrit plus une exposition Internet sur VPS mais le modèle
+  **BYOD / LAN de salle + rejeu de datasets + attaques inter-équipes**. Le
+  Honeyscore Shodan est marqué N/A faute d'IP publique (on se rabat sur nmap NSE
+  et p0f depuis l'équipe adverse sur le LAN).
 - **Ports hôte configurables** via `.env` (`SSH_PORT`/`HTTP_PORT`/`FTP_PORT`/
   `TELNET_PORT`) ; défaut HTTP porté à **8080** (le 80 est souvent déjà pris sous
   WSL/Kali).
@@ -27,9 +33,11 @@ et le projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
 - **Déploiement** : stack rendue fonctionnelle et testable sous Windows et Kali.
 
 ### À venir (P4 → P5)
-- Audit de détectabilité réel sur cible exposée : remplir
+- Audit de détectabilité réel en conditions BYOD/LAN : remplir
   `docs/stealth-audit-initial.md` et `docs/stealth-audit-final.md` (scores /30).
-- Exposition Internet sur VPS jetable (J5) + capture du trafic réel (B23).
+- **P5 (révisé, syllabus 07/05/2026 — sans VPS)** : rejeu de jeux de données
+  d'attaques + campagne d'attaques inter-équipes sur le LAN de la salle (B23),
+  puis capture et classification du trafic réel ainsi généré.
 - Peuplement d'une instance MISP de test + push des IOC (B24, bonus).
 - Bonus : classification par apprentissage automatique (clustering DBSCAN) en
   complément de l'heuristique.

@@ -59,7 +59,7 @@ d'analyse. Aucune donnée brute non anonymisée n'est diffusée hors de l'équip
 
 - Pas de contre-attaque, pas de *hack-back*.
 - Pas de collecte au-delà du périmètre du honeypot.
-- Retrait immédiat de l'exposition Internet à la fin de la fenêtre de démo (J5).
+- Retrait immédiat du dispositif (LAN de salle / rejeu de datasets) à la fin de la fenêtre de démo (J5).
 
 ## 8. Signatures
 

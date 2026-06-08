@@ -59,7 +59,7 @@ d'auto-attaque pour valider la chaîne de détection, et une industrialisation C
 ## Architecture
 
 ```
-                         Internet / Lab
+                    LAN de salle / rejeu datasets
                   22        80        21        23
                   │         │         │         │
             ┌─────▼───┐ ┌───▼────┐ ┌──▼────┐ ┌──▼──────┐
@@ -325,15 +325,15 @@ Audit mesuré avant/après dans
 | P2 — Multi-protocole | B6–B12 | ✅ faux shell, HTTP, FTP, Telnet, shipper, durcissement |
 | P3 — Pipeline d'analyse | B13–B17 | ✅ API, classifier, enrichers, Grafana, exports |
 | P4 — Furtivité mesurée | B18–B22 | 🟡 mécanismes en place, **audits à remplir sur cible réelle** |
-| P5 — Exposition + restitution | B23–B25 | ⏳ J5 (VPS, capture réelle, démo jury) |
+| P5 — Restitution (BYOD/LAN) | B23–B25 | ⏳ J5 (rejeu de datasets + attaques inter-équipes sur le LAN, démo jury) |
 
 ## Cadre légal & éthique
 
 - **RGPD** : l'IP est une donnée personnelle ; base = intérêt légitime ;
   minimisation + anonymisation avant remise. Voir [charte](docs/charte-rgpd.md).
 - **Article 323-1** : système dédié, isolé, sans donnée de tiers, pas d'entrapment.
-- **ENISA** : charte signée, durée de conservation bornée, retrait de l'exposition
-  en fin de fenêtre de démo.
+- **ENISA** : charte signée, durée de conservation bornée, retrait du dispositif
+  (LAN / rejeu) en fin de fenêtre de démo.
 
 ## Dépannage
 

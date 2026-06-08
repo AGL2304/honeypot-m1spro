@@ -29,7 +29,8 @@ nmap -sV -p 22,80,21,23 <cible>
 nmap --script ssh-honeypot-detection -p 22 <cible>
 nmap --script http-honeypot-detection -p 80 <cible>
 sudo p0f -i eth0
-# Honeyscore : https://honeyscore.shodan.io/ (cible exposée)
+# Honeyscore : https://honeyscore.shodan.io/ (N/A en mode BYOD/LAN — pas d'IP publique ;
+#   se rabattre sur nmap NSE + p0f depuis un poste de l'équipe adverse sur le LAN)
 ```
 
 ## Faiblesses identifiées (à corriger en B19-B21)

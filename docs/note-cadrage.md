@@ -6,7 +6,7 @@
 |---|---|---|
 | **Niveau d'interaction** | **Medium-interaction** | Faux shell scripté + routes HTTP/FTP simulées : capture riche (commandes, payloads) sans exécuter de vrai code → risque de pivot quasi nul. |
 | **Finalité** | **Research / production hybride** | Observation comportementale + génération d'IOC défensifs. |
-| **Placement** | **Exposé (VPS jetable J5)** + lab interne | Capture du trafic Internet réel pendant la démo, isolé du SI de l'école. |
+| **Placement** | **Lab BYOD / LAN de salle (J5)** + rejeu de datasets | Syllabus révisé (07/05/2026, sans VPS) : trafic généré par rejeu de jeux de données et attaques inter-équipes sur le LAN, isolé du SI de l'école. |
 | **Données réelles** | Aucune | Seulement des appâts (fake `.env`, `secrets.txt`, faux fs). |
 
 ## 2. Périmètre technique
@@ -37,12 +37,12 @@ Le dispositif s'aligne sur les activités MITRE Engage :
 
 - **RGPD** : IP = donnée personnelle (Breyer C-582/14), base = intérêt légitime, minimisation + anonymisation avant remise. Détail dans [charte-rgpd.md](charte-rgpd.md).
 - **Article 323-1** : système dédié sans donnée de tiers, pas d'entrapment.
-- **ENISA** : charte de collecte signée, durée de conservation bornée, retrait de l'exposition en fin de démo.
+- **ENISA** : charte de collecte signée, durée de conservation bornée, retrait du dispositif en fin de démo.
 
 ## 6. Architecture (vue logique)
 
 ```
-[Internet] → ports 22/80/21/23
+[LAN salle / rejeu datasets] → ports 22/80/21/23
    │
    ├─ honeypot-ssh ─┐
    ├─ honeypot-http ┤  *.jsonl   ┌───────────┐   ┌────────────┐

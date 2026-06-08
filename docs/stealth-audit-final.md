@@ -7,7 +7,7 @@
 
 | # | Test | Score initial | Score final | Contre-mesure appliquée |
 |---|------|---------------|-------------|--------------------------|
-| 1 | Honeyscore Shodan | /3 | /3 | exposition limitée, bannières |
+| 1 | Honeyscore Shodan (N/A en LAN) | /3 | /3 | pas d'IP publique en BYOD ; bannières crédibles malgré tout |
 | 2 | nmap ssh-honeypot-detection | /3 | /3 | bannière OpenSSH 9.2p1 Debian (B19) |
 | 3 | nmap http-honeypot-detection | /3 | /3 | `Server: Apache/2.4.57 (Debian)` (B19) |
 | 4 | p0f | /3 | /3 | — |
