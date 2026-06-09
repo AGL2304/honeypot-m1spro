@@ -1,0 +1,157 @@
+/* secure_app — IHM. Thème sombre sobre, aucune dépendance externe (CSP-safe). */
+:root {
+  --bg: #0e1116;
+  --surface: #171c24;
+  --surface-2: #1f2630;
+  --border: #2a3240;
+  --text: #e6edf3;
+  --muted: #8b97a7;
+  --primary: #3b82f6;
+  --primary-d: #2563eb;
+  --danger: #ef4444;
+  --ok: #22c55e;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand { font-weight: 700; font-size: 1.15rem; }
+.tag {
+  font-size: .65rem;
+  background: var(--primary);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 6px;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
+.who { display: flex; align-items: center; gap: 12px; }
+.who-name { font-weight: 600; }
+
+.container { max-width: 980px; margin: 26px auto; padding: 0 18px; }
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+  gap: 18px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.card h2 { margin: 0 0 14px; font-size: 1.05rem; }
+
+label {
+  display: block;
+  margin-bottom: 12px;
+  font-size: .85rem;
+  color: var(--muted);
+}
+input {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  padding: 9px 11px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: .92rem;
+}
+input:focus { outline: 2px solid var(--primary); border-color: transparent; }
+
+.btn {
+  cursor: pointer;
+  padding: 9px 15px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: .9rem;
+  font-weight: 600;
+}
+.btn:hover { background: #2a3240; }
+.btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-d); }
+.btn-ghost { background: transparent; }
+.btn-danger { background: transparent; border-color: var(--danger); color: var(--danger); padding: 4px 9px; }
+
+.inline-form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.inline-form input { flex: 1; min-width: 120px; }
+
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; }
+
+.mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.block { display: block; padding: 8px; background: var(--surface-2); border-radius: 6px; margin: 8px 0; word-break: break-all; }
+.small { font-size: .78rem; }
+.muted { color: var(--muted); font-weight: 400; }
+
+.notes { list-style: none; padding: 0; margin: 0; }
+.notes li {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: var(--surface-2);
+}
+.notes .n-title { font-weight: 600; }
+.notes .n-body { color: var(--muted); font-size: .85rem; }
+
+.out {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  min-height: 20px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: ui-monospace, monospace;
+  font-size: .85rem;
+}
+.badge-ok { color: var(--ok); font-weight: 700; }
+.badge-ko { color: var(--danger); font-weight: 700; }
+
+.toast {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  padding: 12px 18px;
+  border-radius: 8px;
+  max-width: 90%;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+}
+.toast.err { border-left-color: var(--danger); }
+.toast.ok { border-left-color: var(--ok); }
+
+.hidden { display: none !important; }

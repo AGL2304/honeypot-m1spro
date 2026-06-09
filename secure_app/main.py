@@ -20,11 +20,13 @@ from __future__ import annotations
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import __version__
@@ -34,6 +36,24 @@ from .logging_conf import configure_logging
 from .routers import auth, notes, tools, users
 
 logger = logging.getLogger("secure_app.main")
+
+# Répertoire des fichiers statiques de l'IHM (HTML/CSS/JS auto-portés).
+_STATIC_DIR = Path(__file__).parent / "static"
+
+# CSP DÉDIÉE à la page de l'IHM : on autorise UNIQUEMENT nos propres ressources
+# (`'self'`), sans `'unsafe-inline'` -> scripts/styles externes seulement. Les
+# réponses de l'API gardent, elles, la CSP verrouillée `default-src 'none'`.
+_UI_CSP = (
+    "default-src 'none'; "
+    "script-src 'self'; "
+    "style-src 'self'; "
+    "connect-src 'self'; "
+    "img-src 'self' data:; "
+    "font-src 'self'; "
+    "base-uri 'none'; "
+    "form-action 'self'; "
+    "frame-ancestors 'none'"
+)
 
 # En-têtes de sécurité appliqués à chaque réponse (J4).
 _SECURITY_HEADERS = {
@@ -155,6 +175,21 @@ def create_app() -> FastAPI:
     app.include_router(users.router)
     app.include_router(notes.router)
     app.include_router(tools.router)
+
+    # --- IHM web (front-end auto-porté, client de l'API) ---------------------
+    if _STATIC_DIR.is_dir():
+        app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
+        index_html = (_STATIC_DIR / "index.html").read_text(encoding="utf-8")
+
+        @app.get("/", include_in_schema=False)
+        def _root() -> RedirectResponse:
+            return RedirectResponse(url="/app", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+
+        @app.get("/app", include_in_schema=False)
+        def _ui() -> HTMLResponse:
+            # CSP spécifique à l'IHM (posée explicitement -> le middleware, qui
+            # utilise setdefault, ne l'écrase pas).
+            return HTMLResponse(content=index_html, headers={"Content-Security-Policy": _UI_CSP})
 
     return app
 

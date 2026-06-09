@@ -1,6 +1,12 @@
 # secure_app - API REST sécurisée (fil rouge SDLC). Image durcie (B12).
 FROM python:3.12-slim
 
+# iputils-ping : binaire requis par /tools/ping (démo anti command-injection).
+# Installé proprement puis cache apt purgé (image fine).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends iputils-ping \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir \
     "fastapi>=0.110" "uvicorn[standard]>=0.29" "pydantic>=2.6" \
     "argon2-cffi>=23.1" "pyjwt>=2.8" "pyotp>=2.9"

@@ -100,6 +100,10 @@ services:
     volumes:
       # Base SQLite persistée (rootfs en read-only -> seul /data est inscriptible).
       - secure_app_data:/data
+    # Autorise l'ICMP non privilégié pour /tools/ping SANS rendre de capability
+    # (on garde cap_drop: ALL). Sysctl *namespacé* -> n'affecte que ce conteneur.
+    sysctls:
+      net.ipv4.ping_group_range: "0 2000"
     networks: [hp_exposed]
 
   postgres:
