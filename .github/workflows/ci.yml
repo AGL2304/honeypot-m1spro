@@ -21,13 +21,13 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          pip install -e ".[dev,secure-app]"
 
       - name: Ruff (lint)
         run: ruff check .
 
       - name: Bandit (SAST)
-        run: bandit -r honeypots analyzer -c pyproject.toml
+        run: bandit -r honeypots analyzer secure_app -c pyproject.toml
 
       - name: Semgrep (SAST)
         uses: returntocorp/semgrep-action@v1

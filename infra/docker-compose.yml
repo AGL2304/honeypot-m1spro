@@ -24,6 +24,7 @@ volumes:
   pgdata:
   sshkeys:
   enrich_data:
+  secure_app_data:
 
 services:
   honeypot-ssh:
@@ -79,6 +80,26 @@ services:
       - "${TELNET_PORT:-23}:2323"
     volumes:
       - logs:/logs
+    networks: [hp_exposed]
+
+  secure_app:
+    <<: *hardening
+    build:
+      context: ..
+      dockerfile: secure_app/Dockerfile
+    image: secure_app/api:1.0.0
+    environment:
+      SECURE_APP_ENV: prod
+      # Fail-closed : sans secret fort (min. 32 car.), l'app refuse de démarrer.
+      # Générer : python -c "import secrets; print(secrets.token_urlsafe(48))"
+      SECURE_APP_SECRET_KEY: ${SECURE_APP_SECRET_KEY:-}
+      SECURE_APP_DB_PATH: /data/secure_app.db
+      SECURE_APP_ALLOWED_ORIGINS: ${SECURE_APP_ALLOWED_ORIGINS:-http://localhost:3000}
+    ports:
+      - "${SECURE_APP_PORT:-8001}:8000"
+    volumes:
+      # Base SQLite persistée (rootfs en read-only -> seul /data est inscriptible).
+      - secure_app_data:/data
     networks: [hp_exposed]
 
   postgres:

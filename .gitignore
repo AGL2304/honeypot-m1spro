@@ -13,6 +13,10 @@ venv/
 .env
 *.local
 
+# Base SQLite locale de secure_app (jamais versionnée)
+secure_app.db
+*.sqlite3
+
 # Données runtime
 logs/
 *.jsonl
