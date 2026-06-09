@@ -39,13 +39,15 @@ python3 -m uvicorn vuln_app.main:app --host 0.0.0.0 --port 8002
 # (depuis la racine du repo, pour que l'import "vuln_app.main" résolve)
 ```
 
-### Option B — docker (isolé)
+### Option B — docker (isolé, recommandé en prod)
+
+Compose dédié, séparé de l'infra de prod (il ne démarre jamais avec elle) :
 
 ```bash
-docker run --rm -p 8002:8002 -v "$PWD/vuln_app:/app" -w / python:3.12-slim \
-  sh -c "pip install -q -r /app/requirements.txt && \
-         apt-get update -q && apt-get install -y -q iputils-ping && \
-         python -m uvicorn vuln_app.main:app --host 0.0.0.0 --port 8002"
+cd vuln_app
+docker compose up -d --build      # build + démarre la cible vulnérable sur :8002
+docker compose logs -f vuln_app   # (optionnel) suivre les logs
+docker compose down -v            # arrêter + supprimer après la démo
 ```
 
 ## Démo comparative (attaque les deux côte à côte)

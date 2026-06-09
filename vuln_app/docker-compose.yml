@@ -1,0 +1,17 @@
+# Compose ISOLÉ du jumeau vulnérable (démo M1SPRO).
+# Séparé de infra/docker-compose.yml exprès : il ne démarre JAMAIS avec la prod.
+#
+#   cd vuln_app
+#   docker compose up -d --build          # démarre la cible vulnérable sur :8002
+#   docker compose down -v                # arrête + supprime (après la démo)
+#
+# ⚠️ Cible volontairement trouée. Ouvre 8002 le temps de la démo seulement.
+services:
+  vuln_app:
+    build: .
+    image: vuln_app/demo:0.0.0-insecure
+    container_name: vuln_app_demo
+    ports:
+      - "8002:8002"
+    # Pas de restart automatique : démo éphémère.
+    restart: "no"
