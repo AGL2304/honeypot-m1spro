@@ -25,7 +25,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -176,20 +176,38 @@ def create_app() -> FastAPI:
     app.include_router(notes.router)
     app.include_router(tools.router)
 
-    # --- IHM web (front-end auto-porté, client de l'API) ---------------------
+    # --- IHM web multi-pages (front-end auto-porté, client de l'API) ----------
     if _STATIC_DIR.is_dir():
         app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
-        index_html = (_STATIC_DIR / "index.html").read_text(encoding="utf-8")
 
-        @app.get("/", include_in_schema=False)
-        def _root() -> RedirectResponse:
-            return RedirectResponse(url="/app", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+        # Chaque page HTML est lue une fois au démarrage et servie avec la CSP
+        # spécifique à l'IHM (posée explicitement -> le middleware, qui utilise
+        # setdefault, ne l'écrase pas). L'API JSON garde, elle, default-src 'none'.
+        _pages = {
+            "/": "index.html",
+            "/login": "login.html",
+            "/register": "register.html",
+            "/dashboard": "dashboard.html",
+        }
+        _html_cache = {
+            path: (_STATIC_DIR / filename).read_text(encoding="utf-8")
+            for path, filename in _pages.items()
+        }
 
-        @app.get("/app", include_in_schema=False)
-        def _ui() -> HTMLResponse:
-            # CSP spécifique à l'IHM (posée explicitement -> le middleware, qui
-            # utilise setdefault, ne l'écrase pas).
-            return HTMLResponse(content=index_html, headers={"Content-Security-Policy": _UI_CSP})
+        def _make_page(path: str):
+            html = _html_cache[path]
+
+            def _serve() -> HTMLResponse:
+                return HTMLResponse(
+                    content=html, headers={"Content-Security-Policy": _UI_CSP}
+                )
+
+            return _serve
+
+        for _path in _pages:
+            app.add_api_route(
+                _path, _make_page(_path), methods=["GET"], include_in_schema=False
+            )
 
     return app
 

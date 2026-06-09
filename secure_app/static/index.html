@@ -3,114 +3,59 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>secure_app — IHM</title>
+  <title>secure_app — Accueil</title>
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">🔐 secure_app <span class="tag">M1SPRO</span></div>
-    <div id="who" class="who hidden">
-      <span id="who-name"></span>
-      <button id="btn-logout" class="btn btn-ghost">Déconnexion</button>
-    </div>
+  <header class="nav">
+    <a href="/" class="brand">🔐 secure_app <span class="tag">M1SPRO</span></a>
+    <nav id="nav-links" class="nav-links"></nav>
   </header>
 
+  <section class="hero">
+    <h1>API REST sécurisée, démontrée de bout en bout</h1>
+    <p class="lead">
+      Application compagnon du honeypot — vitrine défensive du programme
+      « Sécurité en Programmation » : anti-injection, authentification forte,
+      anti-BOLA, rate limiting, secrets et DevSecOps.
+    </p>
+    <div class="cta">
+      <a href="/register" class="btn btn-primary">Créer un compte</a>
+      <a href="/login" class="btn">Se connecter</a>
+      <a id="cta-space" href="/dashboard" class="btn btn-ghost hidden">Aller à mon espace</a>
+    </div>
+  </section>
+
   <main class="container">
-
-    <!-- ===================== Vue Authentification ===================== -->
-    <section id="view-auth" class="view">
-      <div class="grid-2">
-        <div class="card">
-          <h2>Connexion</h2>
-          <form id="form-login" autocomplete="off">
-            <label>Nom d'utilisateur
-              <input name="username" required minlength="1" maxlength="64" />
-            </label>
-            <label>Mot de passe
-              <input name="password" type="password" required />
-            </label>
-            <label>Code MFA <span class="muted">(si activé)</span>
-              <input name="otp" inputmode="numeric" maxlength="8" placeholder="123456" />
-            </label>
-            <button class="btn btn-primary" type="submit">Se connecter</button>
-          </form>
-        </div>
-
-        <div class="card">
-          <h2>Créer un compte</h2>
-          <form id="form-register" autocomplete="off">
-            <label>Nom d'utilisateur
-              <input name="username" required minlength="3" maxlength="30" />
-            </label>
-            <label>Email
-              <input name="email" type="email" required maxlength="254" />
-            </label>
-            <label>Mot de passe <span class="muted">(≥ 12, maj/min/chiffre/spécial)</span>
-              <input name="password" type="password" required minlength="12" />
-            </label>
-            <button class="btn" type="submit">S'inscrire</button>
-          </form>
-        </div>
+    <div class="features">
+      <div class="feature">
+        <div class="ico">🛡️</div>
+        <h3>Anti-injection</h3>
+        <p>SQL 100 % paramétré et commandes système sans shell : toute entrée
+           hostile est rejetée avant d'atteindre l'OS.</p>
       </div>
-    </section>
-
-    <!-- ===================== Vue Application ===================== -->
-    <section id="view-app" class="view hidden">
-      <div class="grid-2">
-
-        <div class="card">
-          <h2>Profil</h2>
-          <dl class="kv">
-            <dt>ID</dt><dd id="p-id" class="mono"></dd>
-            <dt>Utilisateur</dt><dd id="p-user"></dd>
-            <dt>Email</dt><dd id="p-email"></dd>
-            <dt>MFA</dt><dd id="p-mfa"></dd>
-          </dl>
-        </div>
-
-        <div class="card">
-          <h2>MFA (TOTP)</h2>
-          <p class="muted">Authentification à deux facteurs (RFC 6238).</p>
-          <button id="btn-mfa-setup" class="btn">Générer un secret</button>
-          <div id="mfa-secret-box" class="hidden">
-            <p>Ajoutez ce secret dans Google Authenticator :</p>
-            <code id="mfa-secret" class="mono block"></code>
-            <code id="mfa-uri" class="mono block small"></code>
-            <form id="form-mfa-enable">
-              <label>Code à 6 chiffres
-                <input name="otp" inputmode="numeric" minlength="6" maxlength="8" required />
-              </label>
-              <button class="btn btn-primary" type="submit">Activer le MFA</button>
-            </form>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>Mes notes</h2>
-          <form id="form-note" class="inline-form">
-            <input name="title" placeholder="Titre" required maxlength="200" />
-            <input name="body" placeholder="Contenu" required maxlength="10000" />
-            <button class="btn btn-primary" type="submit">Ajouter</button>
-          </form>
-          <ul id="notes-list" class="notes"></ul>
-        </div>
-
-        <div class="card">
-          <h2>Outil : ping <span class="muted">(anti command-injection)</span></h2>
-          <form id="form-ping" class="inline-form">
-            <input name="host" placeholder="127.0.0.1 ou example.com" required maxlength="253" />
-            <button class="btn" type="submit">Ping</button>
-          </form>
-          <pre id="ping-out" class="out"></pre>
-          <p class="muted small">Essayez <code>127.0.0.1; rm -rf /</code> → rejeté (400) avant tout appel OS.</p>
-        </div>
-
+      <div class="feature">
+        <div class="ico">🔑</div>
+        <h3>Auth forte</h3>
+        <p>Mots de passe Argon2id, JWT à algorithmes whitelistés, MFA TOTP
+           et révocation des jetons.</p>
       </div>
-    </section>
+      <div class="feature">
+        <div class="ico">🚧</div>
+        <h3>Anti-BOLA</h3>
+        <p>Ressources filtrées par propriétaire, identifiants UUID non
+           énumérables, 404 plutôt que 403.</p>
+      </div>
+      <div class="feature">
+        <div class="ico">🔒</div>
+        <h3>Durcissement</h3>
+        <p>En-têtes de sécurité, CSP stricte, CORS whitelisté, conteneur
+           non-root en rootfs read-only.</p>
+      </div>
+    </div>
   </main>
 
-  <div id="toast" class="toast hidden"></div>
-
-  <script src="/static/app.js"></script>
+  <script src="/static/common.js"></script>
+  <script src="/static/home.js"></script>
 </body>
 </html>

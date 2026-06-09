@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>secure_app — Connexion</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="nav">
+    <a href="/" class="brand">🔐 secure_app <span class="tag">M1SPRO</span></a>
+    <nav id="nav-links" class="nav-links"></nav>
+  </header>
+
+  <main class="container narrow">
+    <div class="card auth-card">
+      <h2>Connexion</h2>
+      <p class="sub">Accédez à votre espace sécurisé.</p>
+      <form id="form-login" autocomplete="off">
+        <label>Nom d'utilisateur
+          <input name="username" required minlength="1" maxlength="64" autofocus />
+        </label>
+        <label>Mot de passe
+          <input name="password" type="password" required />
+        </label>
+        <label>Code MFA <span class="muted">(si activé)</span>
+          <input name="otp" inputmode="numeric" maxlength="8" placeholder="123456" />
+        </label>
+        <button class="btn btn-primary btn-block" type="submit">Se connecter</button>
+      </form>
+      <p class="form-foot">Pas encore de compte ? <a href="/register">Créer un compte</a></p>
+    </div>
+  </main>
+
+  <script src="/static/common.js"></script>
+  <script src="/static/login.js"></script>
+</body>
+</html>

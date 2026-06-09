@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>secure_app — Inscription</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="nav">
+    <a href="/" class="brand">🔐 secure_app <span class="tag">M1SPRO</span></a>
+    <nav id="nav-links" class="nav-links"></nav>
+  </header>
+
+  <main class="container narrow">
+    <div class="card auth-card">
+      <h2>Créer un compte</h2>
+      <p class="sub">Le mot de passe est haché en Argon2id, jamais stocké en clair.</p>
+      <form id="form-register" autocomplete="off">
+        <label>Nom d'utilisateur <span class="muted">(3-30, [a-zA-Z0-9_-])</span>
+          <input name="username" required minlength="3" maxlength="30" autofocus />
+        </label>
+        <label>Email
+          <input name="email" type="email" required maxlength="254" />
+        </label>
+        <label>Mot de passe <span class="muted">(≥ 12 : majuscule, minuscule, chiffre, spécial)</span>
+          <input name="password" type="password" required minlength="12" />
+        </label>
+        <button class="btn btn-primary btn-block" type="submit">S'inscrire</button>
+      </form>
+      <p class="form-foot">Déjà inscrit ? <a href="/login">Se connecter</a></p>
+    </div>
+  </main>
+
+  <script src="/static/common.js"></script>
+  <script src="/static/register.js"></script>
+</body>
+</html>
