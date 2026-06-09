@@ -1,0 +1,11 @@
+# Normalise les fins de ligne. Les scripts/Makefile DOIVENT rester en LF,
+# sinon ils cassent sous Linux/CI (`\r` parasites, recettes make invalides).
+*.sh    text eol=lf
+*.bash  text eol=lf
+Makefile text eol=lf
+*.mk    text eol=lf
+*.c     text eol=lf
+*.h     text eol=lf
+
+# Scripts PowerShell : CRLF (convention Windows).
+*.ps1   text eol=crlf

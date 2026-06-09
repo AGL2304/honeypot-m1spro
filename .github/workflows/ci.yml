@@ -78,6 +78,111 @@ jobs:
         if: failure()
         run: docker logs secure_app || true
 
+  j2-memory-safety:
+    # Jour 2 — sécurité mémoire. secure_app est en Python (memory-safe), donc on
+    # illustre la classe buffer-overflow sur un lab C dédié et on PROUVE en CI :
+    #   (3) le canari de pile transforme l'overflow en abort (SIGABRT / rc 134) ;
+    #   (4) la version bornée + durcie y résiste sans crash (refus propre, rc 1).
+    runs-on: ubuntu-latest
+    needs: lint-sast-test
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Compiler les 3 variantes (naïf / canari / durci)
+        working-directory: labs/j2-buffer-overflow
+        run: make all
+
+      - name: (1) Entrée légitime -> accès accordé (rc 0)
+        working-directory: labs/j2-buffer-overflow
+        run: |
+          ./vuln_nomit "open sesame"
+          test $? -eq 0
+
+      - name: (2) Overflow sur binaire naïf -> flag écrasé (illustratif)
+        working-directory: labs/j2-buffer-overflow
+        # Informatif : l'écrasement de `authenticated` dépend de l'ordre des
+        # locales sur la pile (non garanti par le standard C). On AFFICHE le
+        # résultat sans en faire une condition de build — les preuves dures et
+        # déterministes sont (3) le canari qui abort et (4) la version durcie.
+        run: |
+          PAYLOAD=$(python3 -c 'print("A"*64)')
+          OUT=$(./vuln_nomit "$PAYLOAD" || true)
+          echo "$OUT"
+          echo "$OUT" | grep -q "ACCES ACCORDE" \
+            && echo ">> flag d'authentification écrasé : exploit reproduit" \
+            || echo ">> flag non écrasé sur ce layout (la preuve reste (3)/(4))"
+
+      - name: (3) Même overflow AVEC canari -> doit aborter (SIGABRT, rc 134)
+        working-directory: labs/j2-buffer-overflow
+        run: |
+          PAYLOAD=$(python3 -c 'print("A"*64)')
+          set +e
+          ./vuln_canary "$PAYLOAD"
+          rc=$?
+          set -e
+          echo "rc=$rc (attendu 134 = 128+SIGABRT)"
+          test "$rc" -eq 134
+
+      - name: (4) Même overflow sur version bornée+durcie -> aucun crash (rc 1)
+        working-directory: labs/j2-buffer-overflow
+        run: |
+          PAYLOAD=$(python3 -c 'print("A"*64)')
+          set +e
+          ./hardened "$PAYLOAD"
+          rc=$?
+          set -e
+          echo "rc=$rc (attendu 1 = accès refusé, pas de corruption)"
+          test "$rc" -eq 1
+
+  dast-zap:
+    # Jour 5 — DAST. OWASP ZAP baseline attaque dynamiquement le conteneur
+    # secure_app en marche (scan passif + règles actives légères) et publie le
+    # rapport en artefact. -I => le job ne casse pas sur des WARN informatifs ;
+    # le rapport reste consultable pour l'analyse jury.
+    runs-on: ubuntu-latest
+    needs: lint-sast-test
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build image secure_app
+        run: docker build -f secure_app/Dockerfile -t secure_app/api:ci .
+
+      - name: Réseau dédié + lancement secure_app (fail-closed respecté)
+        run: |
+          docker network create zapnet
+          SECRET=$(python3 -c "import secrets; print(secrets.token_urlsafe(48))")
+          docker run -d --name secure_app --network zapnet -p 8001:8000 \
+            -e SECURE_APP_ENV=prod \
+            -e SECURE_APP_SECRET_KEY="$SECRET" \
+            secure_app/api:ci
+
+      - name: Attendre /health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8001/health; then echo; echo "up"; exit 0; fi
+            sleep 2
+          done
+          echo "secure_app n'a pas démarré :"; docker logs secure_app; exit 1
+
+      - name: OWASP ZAP baseline (DAST)
+        run: |
+          mkdir -p zap-out && chmod 777 zap-out
+          docker run --rm --network zapnet -v "$PWD/zap-out:/zap/wrk:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py -t http://secure_app:8000 \
+              -r zap-report.html -w zap-report.md -I
+
+      - name: Publier le rapport ZAP
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-baseline-report
+          path: zap-out/
+
+      - name: Logs du conteneur si échec
+        if: failure()
+        run: docker logs secure_app || true
+
   build-scan:
     runs-on: ubuntu-latest
     needs: lint-sast-test
