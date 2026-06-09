@@ -30,6 +30,9 @@ exports/*.iptables
 exports/iocs.json
 exports/rules/*.yml
 
+# Rapports DAST (OWASP ZAP) générés localement
+zap-out/
+
 # Divers
 .DS_Store
 *.log

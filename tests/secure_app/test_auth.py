@@ -93,3 +93,5 @@ def test_security_headers_present(client):
     assert resp.headers.get("X-Content-Type-Options") == "nosniff"
     assert resp.headers.get("X-Frame-Options") == "DENY"
     assert "default-src 'none'" in resp.headers.get("Content-Security-Policy", "")
+    # API authentifiée : pas de mise en cache par un proxy partagé (CWE-524).
+    assert resp.headers.get("Cache-Control") == "no-store"

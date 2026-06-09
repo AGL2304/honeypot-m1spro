@@ -46,6 +46,11 @@ _SECURITY_HEADERS = {
     "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
     # Politique de permissions navigateur : on coupe les capteurs.
     "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
+    # API authentifiée : aucune réponse ne doit être mise en cache par un
+    # cache partagé (proxy) -> évite la fuite de données utilisateur
+    # (CWE-524, confirmé par le DAST OWASP ZAP).
+    "Cache-Control": "no-store",
+    "Pragma": "no-cache",
 }
 
 
