@@ -29,12 +29,15 @@ import base64
 import json
 import sqlite3
 import subprocess
+import time
 import uuid
 from pathlib import Path
 
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel
+
+import app_telemetry
 
 # Base SQLite jetable (fichier local, recréé au besoin).
 _DB = Path(__file__).parent / "vuln.db"
@@ -48,6 +51,31 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_url="/openapi.json",
 )
+
+
+# --- Télémétrie comparative (optionnelle, fail-open) -------------------------
+# Enregistre chaque requête dans le PostgreSQL du honeypot pour le dashboard
+# Grafana « secure vs vuln ». Inactif si APP_METRICS_DSN n'est pas défini.
+@app.middleware("http")
+async def request_telemetry(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    if app_telemetry.enabled():
+        latency_ms = (time.perf_counter() - start) * 1000.0
+        xff = request.headers.get("x-forwarded-for", "")
+        client_ip = (
+            xff.split(",")[0].strip()
+            if xff
+            else (request.client.host if request.client else None)
+        )
+        app_telemetry.record(
+            client_ip=client_ip,
+            method=request.method,
+            path=request.url.path,
+            status_code=response.status_code,
+            latency_ms=latency_ms,
+        )
+    return response
 
 
 def _conn() -> sqlite3.Connection:

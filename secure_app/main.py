@@ -18,6 +18,7 @@ L'application reste *fail-closed* : en production, l'absence de
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -29,7 +30,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import __version__
+from . import __version__, app_telemetry
 from .config import get_settings
 from .database import connect, init_db
 from .logging_conf import configure_logging
@@ -128,6 +129,31 @@ def create_app() -> FastAPI:
         if settings.is_prod:
             response.headers.setdefault(
                 "Strict-Transport-Security", "max-age=63072000; includeSubDomains"
+            )
+        return response
+
+    # --- Télémétrie comparative (optionnelle, fail-open) ---------------------
+    # Enregistre chaque requête (app, IP, méthode, chemin, code HTTP) dans
+    # PostgreSQL pour le dashboard Grafana « secure vs vuln ». Inactif si
+    # APP_METRICS_DSN n'est pas défini. Ne modifie jamais la réponse.
+    @app.middleware("http")
+    async def request_telemetry(request: Request, call_next):  # type: ignore[no-untyped-def]
+        start = time.perf_counter()
+        response = await call_next(request)
+        if app_telemetry.enabled():
+            latency_ms = (time.perf_counter() - start) * 1000.0
+            xff = request.headers.get("x-forwarded-for", "")
+            client_ip = (
+                xff.split(",")[0].strip()
+                if xff
+                else (request.client.host if request.client else None)
+            )
+            app_telemetry.record(
+                client_ip=client_ip,
+                method=request.method,
+                path=request.url.path,
+                status_code=response.status_code,
+                latency_ms=latency_ms,
             )
         return response
 

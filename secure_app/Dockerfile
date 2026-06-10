@@ -9,7 +9,8 @@ RUN apt-get update \
 
 RUN pip install --no-cache-dir \
     "fastapi>=0.110" "uvicorn[standard]>=0.29" "pydantic>=2.6" \
-    "argon2-cffi>=23.1" "pyjwt>=2.8" "pyotp>=2.9"
+    "argon2-cffi>=23.1" "pyjwt>=2.8" "pyotp>=2.9" \
+    "psycopg[binary]>=3.1"
 
 RUN useradd --uid 1000 --create-home --shell /usr/sbin/nologin appuser
 

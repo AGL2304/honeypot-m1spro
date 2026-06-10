@@ -1,0 +1,142 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "title": "Comparatif secure_app vs vuln_app (attaque / défense)",
+  "uid": "app-comparatif",
+  "tags": ["m1spro", "secure_app", "vuln_app", "comparatif"],
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": { "from": "now-6h", "to": "now" },
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "type": "text",
+      "title": "",
+      "gridPos": { "h": 3, "w": 24, "x": 0, "y": 0 },
+      "options": {
+        "mode": "markdown",
+        "content": "## Comparatif **attaque / défense** — `secure_app` (8001) vs `vuln_app` (8002)\nMêmes requêtes Kali envoyées aux deux apps. **secure_app bloque** (codes 4xx : 401/403/422/**429**) ; **vuln_app laisse passer** (code 200). Lance `vuln_app/demo_comparatif.sh` puis observe ci-dessous. _Source : table `app_requests` (télémétrie middleware)._"
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Requêtes secure_app",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 3 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "green" } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/.*/" }, "colorMode": "background", "graphMode": "none" },
+      "targets": [
+        { "rawSql": "SELECT COUNT(*) AS value FROM app_requests WHERE app='secure'", "format": "table" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Requêtes vuln_app",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 3 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "red" } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/.*/" }, "colorMode": "background", "graphMode": "none" },
+      "targets": [
+        { "rawSql": "SELECT COUNT(*) AS value FROM app_requests WHERE app='vuln'", "format": "table" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Rate-limit déclenché (429) — secure uniquement",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 3 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "blue" } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/.*/" }, "colorMode": "background", "graphMode": "none" },
+      "targets": [
+        { "rawSql": "SELECT COUNT(*) AS value FROM app_requests WHERE status_code=429", "format": "table" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Attaques RÉUSSIES sur vuln_app (200 sur cible)",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 3 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "dark-red" } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/.*/" }, "colorMode": "background", "graphMode": "none" },
+      "targets": [
+        { "rawSql": "SELECT COUNT(*) AS value FROM app_requests WHERE app='vuln' AND attack_type IS NOT NULL AND status_code < 400", "format": "table" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Trafic par application (req/min)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 7 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "bars", "fillOpacity": 60, "stacking": { "mode": "normal" } } } },
+      "targets": [
+        {
+          "rawSql": "SELECT date_trunc('minute', ts) AS time, app AS metric, COUNT(*) AS value FROM app_requests WHERE $__timeFilter(ts) GROUP BY 1,2 ORDER BY 1",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Comparatif par type d'attaque (bloquées vs réussies)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 7 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "targets": [
+        {
+          "rawSql": "SELECT attack_type AS \"Type d'attaque\", COUNT(*) FILTER (WHERE app='secure') AS \"secure (req)\", COUNT(*) FILTER (WHERE app='secure' AND blocked) AS \"secure bloquées\", COUNT(*) FILTER (WHERE app='vuln') AS \"vuln (req)\", COUNT(*) FILTER (WHERE app='vuln' AND NOT blocked) AS \"vuln réussies\" FROM app_requests WHERE attack_type IS NOT NULL GROUP BY attack_type ORDER BY attack_type",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "type": "piechart",
+      "title": "Codes HTTP — secure_app",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 15 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "options": { "pieType": "donut", "reduceOptions": { "values": true, "calcs": [] }, "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] } },
+      "targets": [
+        {
+          "rawSql": "SELECT status_code::text AS metric, COUNT(*) AS value FROM app_requests WHERE app='secure' GROUP BY status_code ORDER BY value DESC",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "type": "piechart",
+      "title": "Codes HTTP — vuln_app",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 15 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "options": { "pieType": "donut", "reduceOptions": { "values": true, "calcs": [] }, "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] } },
+      "targets": [
+        {
+          "rawSql": "SELECT status_code::text AS metric, COUNT(*) AS value FROM app_requests WHERE app='vuln' GROUP BY status_code ORDER BY value DESC",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Top IP sources (les deux apps)",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 15 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "targets": [
+        {
+          "rawSql": "SELECT host(client_ip) AS ip, app, COUNT(*) AS hits FROM app_requests WHERE client_ip IS NOT NULL GROUP BY client_ip, app ORDER BY hits DESC LIMIT 15",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Dernières requêtes (live)",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 23 },
+      "datasource": { "type": "postgres", "uid": "honeypot-pg" },
+      "targets": [
+        {
+          "rawSql": "SELECT ts AS \"horodatage\", app, host(client_ip) AS ip, method AS methode, path AS chemin, status_code AS code, attack_type AS \"type d'attaque\", blocked AS bloque FROM app_requests ORDER BY ts DESC LIMIT 50",
+          "format": "table"
+        }
+      ]
+    }
+  ]
+}

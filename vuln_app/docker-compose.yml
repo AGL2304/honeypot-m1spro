@@ -13,5 +13,22 @@ services:
     container_name: vuln_app_demo
     ports:
       - "8002:8002"
+    environment:
+      # Télémétrie comparative -> PostgreSQL du honeypot (dashboard Grafana
+      # « secure vs vuln »). Fail-open : si PG est injoignable, l'app tourne
+      # quand même. Nécessite que la stack honeypot (réseau ci-dessous) tourne.
+      APP_METRICS_DSN: ${APP_METRICS_DSN:-host=postgres port=5432 dbname=honeypot user=honeypot password=honeypot}
+      APP_METRICS_NAME: vuln
+    # Rejoint le réseau interne du honeypot pour résoudre/atteindre `postgres`.
+    networks: [hp_internal]
     # Pas de restart automatique : démo éphémère.
     restart: "no"
+
+# Réseau interne de la stack honeypot (projet `honeypot-m1spro`), déclaré
+# `external` : on s'y rattache pour écrire la télémétrie dans PostgreSQL. Il doit
+# donc exister (= la stack honeypot tourne). Pour lancer vuln_app SANS télémétrie
+# en isolation totale, retire ce bloc `networks` + l'env APP_METRICS_DSN.
+networks:
+  hp_internal:
+    name: honeypot-m1spro_hp_internal
+    external: true

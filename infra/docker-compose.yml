@@ -95,6 +95,10 @@ services:
       SECURE_APP_SECRET_KEY: ${SECURE_APP_SECRET_KEY:-}
       SECURE_APP_DB_PATH: /data/secure_app.db
       SECURE_APP_ALLOWED_ORIGINS: ${SECURE_APP_ALLOWED_ORIGINS:-http://localhost:3000}
+      # Télémétrie comparative -> PostgreSQL (dashboard Grafana « secure vs vuln »).
+      # Fail-open : si PostgreSQL est injoignable, l'app fonctionne quand même.
+      APP_METRICS_DSN: "host=postgres port=5432 dbname=${POSTGRES_DB:-honeypot} user=${POSTGRES_USER:-honeypot} password=${POSTGRES_PASSWORD:-honeypot}"
+      APP_METRICS_NAME: secure
     ports:
       - "${SECURE_APP_PORT:-8001}:8000"
     volumes:
@@ -104,7 +108,9 @@ services:
     # (on garde cap_drop: ALL). Sysctl *namespacé* -> n'affecte que ce conteneur.
     sysctls:
       net.ipv4.ping_group_range: "0 2000"
-    networks: [hp_exposed]
+    # hp_exposed : publie le port 8001. hp_internal : accès à PostgreSQL pour la
+    # télémétrie comparative (même réseau que l'analyzer).
+    networks: [hp_exposed, hp_internal]
 
   postgres:
     image: postgres:16-alpine
