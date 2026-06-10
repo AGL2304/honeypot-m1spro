@@ -86,7 +86,8 @@ def create_app() -> FastAPI:
         conn = connect(app.state.db_path)
         try:
             init_db(conn)
-            seed.seed_if_empty(conn)  # données de démo si base vierge (idempotent)
+            if settings.seed_demo:
+                seed.seed_if_empty(conn)  # données de démo si base vierge (idempotent)
         finally:
             conn.close()
         logger.info("secure_app démarrée (env=%s, version=%s)", settings.env, __version__)

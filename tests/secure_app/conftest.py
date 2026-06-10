@@ -19,6 +19,8 @@ os.environ.setdefault("SECURE_APP_SECRET_KEY", "test-secret-key-of-sufficient-le
 os.environ.setdefault("SECURE_APP_ARGON2_TIME", "1")
 os.environ.setdefault("SECURE_APP_ARGON2_MEMORY", "8192")
 os.environ.setdefault("SECURE_APP_ARGON2_PAR", "1")
+# Pas de seed démo en test : les tests créent eux-mêmes alice/bob (évite les 409).
+os.environ.setdefault("SECURE_APP_SEED_DEMO", "0")
 
 from fastapi.testclient import TestClient  # noqa: E402
 

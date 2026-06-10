@@ -77,6 +77,14 @@ class Settings:
     )
     argon2_parallelism: int = field(default_factory=lambda: _env_int("SECURE_APP_ARGON2_PAR", 4))
 
+    # Données de démo (alice/bob + notes + secrets) insérées au démarrage si la
+    # base est vierge. Activé par défaut (vitrine) ; désactivé dans les tests
+    # (SECURE_APP_SEED_DEMO=0) pour ne pas pré-créer les comptes attendus.
+    seed_demo: bool = field(
+        default_factory=lambda: os.environ.get("SECURE_APP_SEED_DEMO", "1").lower()
+        not in {"0", "false", "no"}
+    )
+
     @property
     def is_prod(self) -> bool:
         return self.env.lower() in {"prod", "production"}
