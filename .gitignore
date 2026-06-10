@@ -39,3 +39,4 @@ zap-out/
 
 # Editeur
 .vscode/
+docker-compose.localtest.yml
