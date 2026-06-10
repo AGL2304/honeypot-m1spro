@@ -57,9 +57,11 @@ jobs:
       - name: Run secure_app (env=prod, secret généré -> fail-closed respecté)
         run: |
           SECRET=$(python3 -c "import secrets; print(secrets.token_urlsafe(48))")
+          # SEED_DEMO=0 : le scénario crée lui-même alice/bob (sinon register -> 409).
           docker run -d --name secure_app -p 8001:8000 \
             -e SECURE_APP_ENV=prod \
             -e SECURE_APP_SECRET_KEY="$SECRET" \
+            -e SECURE_APP_SEED_DEMO=0 \
             secure_app/api:ci
 
       - name: Attendre /health
