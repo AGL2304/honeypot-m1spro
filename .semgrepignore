@@ -1,0 +1,29 @@
+# Fichiers/dossiers ignorés par Semgrep (SAST).
+# On reprend les exclusions usuelles (dépendances, artefacts de build) et on y
+# ajoute vuln_app : jumeau VOLONTAIREMENT VULNÉRABLE (démo attaque/défense, type
+# DVWA). Ses failles sont intentionnelles -> hors périmètre de l'analyse statique
+# pour ne pas noyer les vraies alertes. Il n'est ni packagé ni déployé en prod.
+
+# --- Dépendances / environnements ---
+node_modules/
+vendor/
+.venv/
+venv/
+.tox/
+
+# --- Artefacts de build / générés ---
+dist/
+build/
+target/
+out/
+*.min.js
+*.bundle.js
+*.map
+
+# --- VCS ---
+.git/
+.hg/
+.svn/
+
+# --- Jumeau volontairement vulnérable (exclu du SAST) ---
+vuln_app/

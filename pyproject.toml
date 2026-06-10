@@ -43,6 +43,10 @@ include = ["honeypots*", "analyzer*", "secure_app*"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+# vuln_app/ est un JUMEAU VOLONTAIREMENT VULNÉRABLE (démo attaque/défense, comme
+# DVWA) : ses failles sont intentionnelles. On l'exclut de l'analyse statique
+# pour ne pas polluer le signal — il n'est ni packagé ni déployé en prod.
+extend-exclude = ["vuln_app"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "S"]
@@ -66,7 +70,8 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 
 [tool.bandit]
-exclude_dirs = ["tests", "attacks"]
+# vuln_app : code volontairement vulnérable (démo) -> hors périmètre SAST.
+exclude_dirs = ["tests", "attacks", "vuln_app"]
 # Patterns inhérents et volontaires pour un honeypot (justifiés) :
 #   B104 : les services DOIVENT écouter sur 0.0.0.0 (exposition volontaire)
 #   B105 : faux /etc/passwd appât, pas un secret réel
