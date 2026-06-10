@@ -66,7 +66,9 @@ def reveal_secret(secret_id: str, user: CurrentUser, conn: DbConn) -> SecretOut:
     try:
         value = crypto.decrypt(row["value_enc"])
     except Exception:
-        logger.exception("Déchiffrement secret %s impossible", secret_id)
+        # On ne journalise QUE l'identifiant (UUID), jamais la valeur déchiffrée.
+        # nosemgrep
+        logger.exception("Déchiffrement impossible pour l'id %s", secret_id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erreur interne."
         ) from None
