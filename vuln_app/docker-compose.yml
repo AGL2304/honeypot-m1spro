@@ -19,16 +19,22 @@ services:
       # quand même. Nécessite que la stack honeypot (réseau ci-dessous) tourne.
       APP_METRICS_DSN: ${APP_METRICS_DSN:-host=postgres port=5432 dbname=honeypot user=honeypot password=honeypot}
       APP_METRICS_NAME: vuln
-    # Rejoint le réseau interne du honeypot pour résoudre/atteindre `postgres`.
-    networks: [hp_internal]
+    # Deux réseaux : `default` (bridge normal) pour PUBLIER le port 8002 vers
+    # l'hôte, et `hp_internal` (interne au honeypot) pour joindre PostgreSQL.
+    # NB : un conteneur uniquement sur un réseau `internal: true` ne peut PAS
+    # publier de port -> d'où le bridge `default` en plus.
+    networks: [default, hp_internal]
     # Pas de restart automatique : démo éphémère.
     restart: "no"
 
-# Réseau interne de la stack honeypot (projet `honeypot-m1spro`), déclaré
-# `external` : on s'y rattache pour écrire la télémétrie dans PostgreSQL. Il doit
-# donc exister (= la stack honeypot tourne). Pour lancer vuln_app SANS télémétrie
-# en isolation totale, retire ce bloc `networks` + l'env APP_METRICS_DSN.
 networks:
+  # Bridge local de ce compose : permet la publication de 8002 vers l'hôte.
+  default:
+    driver: bridge
+  # Réseau interne de la stack honeypot (projet `honeypot-m1spro`), déclaré
+  # `external` : on s'y rattache pour écrire la télémétrie dans PostgreSQL. Il
+  # doit donc exister (= la stack honeypot tourne). Pour lancer vuln_app SANS
+  # télémétrie en isolation totale, retire `hp_internal` + l'env APP_METRICS_DSN.
   hp_internal:
     name: honeypot-m1spro_hp_internal
     external: true
