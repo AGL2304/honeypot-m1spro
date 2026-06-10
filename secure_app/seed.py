@@ -19,7 +19,7 @@ from . import crypto, repository, security
 logger = logging.getLogger("secure_app.seed")
 
 # Mot de passe commun aux comptes de démo (fort : 12+, classes mixtes).
-DEMO_PASSWORD = "Sup3r-S3cret!Pass"
+DEMO_PASSWORD = "Sup3r-S3cret!Pass"  # noqa: S105 (mot de passe de démo assumé, pas un secret de prod)
 
 # UUID fixes -> seed rejouable sans doublon (INSERT OR IGNORE).
 _ALICE = "11111111-1111-4111-8111-111111111111"
