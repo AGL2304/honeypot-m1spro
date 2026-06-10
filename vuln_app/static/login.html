@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>vuln_app — Connexion</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="danger-banner">⚠️ DÉMO VULNÉRABLE — /auth/login est injectable (SQLi) ⚠️</div>
+  <header class="nav">
+    <a href="/" class="brand">☠️ vuln_app <span class="tag">INSECURE</span></a>
+    <nav id="nav-links" class="nav-links"></nav>
+  </header>
+
+  <main class="container narrow">
+    <div class="card auth-card">
+      <h2>Connexion</h2>
+      <p class="sub">Comptes de démo : <code>alice</code> / <code>bob</code> — mdp <code>Sup3r-S3cret!Pass</code>.</p>
+      <form id="form-login" autocomplete="off">
+        <label>Nom d'utilisateur
+          <input name="username" required autofocus placeholder="alice" />
+        </label>
+        <label>Mot de passe
+          <input name="password" type="password" required />
+        </label>
+        <button class="btn btn-primary btn-block" type="submit">Se connecter</button>
+      </form>
+      <p class="form-foot muted small">Astuce pédagogique : essayez <code>alice'--</code> comme identifiant.</p>
+      <p class="form-foot">Pas de compte ? <a href="/register">En créer un</a></p>
+    </div>
+  </main>
+
+  <script src="/static/common.js"></script>
+  <script src="/static/login.js"></script>
+</body>
+</html>

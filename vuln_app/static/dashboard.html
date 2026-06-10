@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>vuln_app — Mon espace</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="danger-banner">⚠️ DÉMO VULNÉRABLE — /users/me FUITE le mot de passe, /tools/ping exécute le shell ⚠️</div>
+  <header class="nav">
+    <a href="/" class="brand">☠️ vuln_app <span class="tag">INSECURE</span></a>
+    <nav id="nav-links" class="nav-links"></nav>
+  </header>
+
+  <main class="container">
+    <div class="grid-2">
+
+      <div class="card">
+        <h2>Profil <span class="muted">(fuite volontaire)</span></h2>
+        <dl class="kv">
+          <dt>ID</dt><dd id="p-id" class="mono small"></dd>
+          <dt>Utilisateur</dt><dd id="p-user"></dd>
+          <dt>Email</dt><dd id="p-email"></dd>
+          <dt>Mot de passe</dt><dd id="p-pass" class="mono"></dd>
+        </dl>
+        <p class="muted small">secure_app n'expose JAMAIS ce champ ; ici /users/me le renvoie en clair.</p>
+      </div>
+
+      <div class="card">
+        <h2>Mes notes</h2>
+        <form id="form-note" class="inline-form">
+          <input name="title" placeholder="Titre" required />
+          <input name="body" placeholder="Contenu" />
+          <button class="btn btn-primary" type="submit">Ajouter</button>
+        </form>
+        <ul id="notes-list" class="notes"></ul>
+        <p class="muted small">BOLA : /notes/{id} lit la note de n'importe qui (pas de contrôle de propriété).</p>
+      </div>
+
+      <div class="card">
+        <h2>Outil : ping <span class="muted">(command injection)</span></h2>
+        <form id="form-ping" class="inline-form">
+          <input name="host" placeholder="127.0.0.1;id" required />
+          <button class="btn" type="submit">Ping</button>
+        </form>
+        <pre id="ping-out" class="out"></pre>
+        <p class="muted small">Essayez <code>127.0.0.1;id</code> ou <code>127.0.0.1;cat /etc/passwd</code> → exécuté par le shell.</p>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="/static/common.js"></script>
+  <script src="/static/dashboard.js"></script>
+</body>
+</html>

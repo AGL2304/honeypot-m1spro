@@ -34,13 +34,39 @@ import uuid
 from pathlib import Path
 
 from fastapi import FastAPI, Header, Request
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 import app_telemetry
 
 # Base SQLite jetable (fichier local, recréé au besoin).
 _DB = Path(__file__).parent / "vuln.db"
+_STATIC_DIR = Path(__file__).parent / "static"
+
+# Comptes/secrets de démo — MÊMES identités que secure_app, mais ici tout est
+# stocké EN CLAIR et dumpable. C'est exactement le contraste de la soutenance.
+_DEMO_PASSWORD = "Sup3r-S3cret!Pass"
+_ALICE = "11111111-1111-4111-8111-111111111111"
+_BOB = "22222222-2222-4222-8222-222222222222"
+_SEED_USERS = [
+    (_ALICE, "alice", "alice@example.com", _DEMO_PASSWORD),
+    (_BOB, "bob", "bob@example.com", _DEMO_PASSWORD),
+]
+_SEED_NOTES = [
+    (_ALICE, "Réunion sécurité", "Préparer le comparatif secure vs vuln pour le jury J5."),
+    (_ALICE, "Idée", "Activer le MFA sur tous les comptes admin."),
+    (_BOB, "Todo", "Renouveler le certificat TLS avant expiration."),
+]
+# VULN J3/J4 : secrets stockés EN CLAIR -> un dump SQLi ou la route /secrets/export
+# les livre tels quels (à comparer au coffre AES-256-GCM de secure_app).
+_SEED_SECRETS = [
+    (_ALICE, "Clé API production", "sk-live-9f2c7b1a4e8d6049b3aa12ce77f03d5e"),
+    (_ALICE, "Mot de passe BDD", "P@ssw0rd-Prod-2026!"),
+    (_ALICE, "Code de récupération", "RX7Q-22KD-9F1A-MM30"),
+    (_BOB, "Token GitHub", "ghp_8sd7Fk2LmN0pQrS1tUvWxYz3aB4cD5eF6gH"),
+    (_BOB, "PIN carte", "4071"),
+]
 
 app = FastAPI(
     title="vuln_app — JUMEAU VULNÉRABLE (démo M1SPRO)",
@@ -102,11 +128,38 @@ def _init_db() -> None:
                 title    TEXT,
                 body     TEXT
             );
+            CREATE TABLE IF NOT EXISTS secrets (
+                id         TEXT PRIMARY KEY,
+                owner_id   TEXT,
+                label      TEXT,
+                value      TEXT,          -- VULN J3 : secret stocké EN CLAIR
+                created_at TEXT DEFAULT (datetime('now'))
+            );
             """
         )
         conn.commit()
+        _seed_if_empty(conn)
     finally:
         conn.close()
+
+
+def _seed_if_empty(conn: sqlite3.Connection) -> None:
+    """Insère alice/bob + notes + secrets si la base est vierge (idempotent)."""
+    if conn.execute("SELECT COUNT(*) FROM users").fetchone()[0] > 0:
+        return
+    conn.executemany(
+        "INSERT OR IGNORE INTO users (id, username, email, password) VALUES (?, ?, ?, ?)",
+        _SEED_USERS,
+    )
+    conn.executemany(
+        "INSERT INTO notes (id, owner_id, title, body) VALUES (?, ?, ?, ?)",
+        [(str(uuid.uuid4()), o, t, b) for (o, t, b) in _SEED_NOTES],
+    )
+    conn.executemany(
+        "INSERT INTO secrets (id, owner_id, label, value) VALUES (?, ?, ?, ?)",
+        [(str(uuid.uuid4()), o, lbl, val) for (o, lbl, val) in _SEED_SECRETS],
+    )
+    conn.commit()
 
 
 # --- JWT « maison » SANS vérification de signature (VULN J3) ------------------
@@ -161,6 +214,11 @@ class NoteIn(BaseModel):
 
 class PingIn(BaseModel):
     host: str
+
+
+class SecretIn(BaseModel):
+    label: str
+    value: str
 
 
 @app.get("/health")
@@ -338,6 +396,93 @@ def ping(data: PingIn, authorization: str | None = Header(default=None)) -> JSON
     })
 
 
+# --- J3/J4 : coffre à secrets EN CLAIR, BOLA + dump complet ------------------
+@app.post("/secrets", status_code=201)
+def create_secret(data: SecretIn, authorization: str | None = Header(default=None)) -> JSONResponse:
+    uid = _require_user(authorization)
+    if uid is None:
+        return JSONResponse(status_code=401, content={"detail": "Auth requise."})
+    sid = str(uuid.uuid4())
+    conn = _conn()
+    try:
+        # VULN J3 : on stocke la valeur EN CLAIR (aucun chiffrement au repos).
+        conn.execute(
+            "INSERT INTO secrets (id, owner_id, label, value) VALUES (?, ?, ?, ?)",
+            (sid, uid, data.label, data.value),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return JSONResponse(status_code=201, content={"id": sid, "label": data.label, "value": data.value})
+
+
+@app.get("/secrets")
+def list_secrets(authorization: str | None = Header(default=None)) -> JSONResponse:
+    uid = _require_user(authorization)
+    if uid is None:
+        return JSONResponse(status_code=401, content={"detail": "Auth requise."})
+    conn = _conn()
+    try:
+        # VULN J4 (property-level disclosure) : on renvoie la valeur EN CLAIR
+        # dès la liste (secure_app, lui, ne renvoie qu'un aperçu masqué).
+        rows = conn.execute(
+            "SELECT id, label, value, created_at FROM secrets WHERE owner_id = ?", (uid,)
+        ).fetchall()
+    finally:
+        conn.close()
+    return JSONResponse(status_code=200, content=[dict(r) for r in rows])
+
+
+@app.get("/secrets/export")
+def export_secrets() -> JSONResponse:
+    """VULN A01/API1 : dump COMPLET de TOUS les secrets de TOUS les comptes, en
+    clair et SANS authentification. Démontre l'absence d'ownership + de
+    chiffrement (le pendant « via l'app » du dump SQLi)."""
+    conn = _conn()
+    try:
+        rows = conn.execute(
+            "SELECT s.id, s.owner_id, u.username, s.label, s.value, s.created_at "
+            "FROM secrets s LEFT JOIN users u ON u.id = s.owner_id"
+        ).fetchall()
+    finally:
+        conn.close()
+    return JSONResponse(status_code=200, content=[dict(r) for r in rows])
+
+
+@app.get("/secrets/{secret_id}")
+def get_secret(secret_id: str, authorization: str | None = Header(default=None)) -> JSONResponse:
+    if _require_user(authorization) is None:
+        return JSONResponse(status_code=401, content={"detail": "Auth requise."})
+    conn = _conn()
+    try:
+        # VULN J4 (BOLA) : aucun filtre owner_id -> on lit le secret de n'importe qui.
+        row = conn.execute(
+            "SELECT id, owner_id, label, value, created_at FROM secrets WHERE id = ?", (secret_id,)
+        ).fetchone()
+    finally:
+        conn.close()
+    if row is None:
+        return JSONResponse(status_code=404, content={"detail": "Introuvable."})
+    return JSONResponse(status_code=200, content=dict(row))
+
+
+@app.delete("/secrets/{secret_id}")
+def delete_secret(secret_id: str, authorization: str | None = Header(default=None)) -> JSONResponse:
+    if _require_user(authorization) is None:
+        return JSONResponse(status_code=401, content={"detail": "Auth requise."})
+    conn = _conn()
+    try:
+        # VULN J4 (BOLA) : suppression sans contrôle de propriété.
+        cur = conn.execute("DELETE FROM secrets WHERE id = ?", (secret_id,))
+        conn.commit()
+        deleted = cur.rowcount
+    finally:
+        conn.close()
+    if not deleted:
+        return JSONResponse(status_code=404, content={"detail": "Introuvable."})
+    return JSONResponse(status_code=200, content={"detail": "Supprimé."})
+
+
 # --- J4 : gestion d'erreurs qui FUITE la stack trace -------------------------
 @app.exception_handler(Exception)
 async def leaky_handler(request: Request, exc: Exception) -> PlainTextResponse:
@@ -346,6 +491,30 @@ async def leaky_handler(request: Request, exc: Exception) -> PlainTextResponse:
     return PlainTextResponse(status_code=500, content="".join(
         traceback.format_exception(type(exc), exc, exc.__traceback__)
     ))
+
+
+# --- IHM web (jumeau « rouge » de l'IHM secure_app) --------------------------
+# VULN J4 : aucune CSP, scripts/styles inline autorisés -> miroir laxiste de
+# l'IHM durcie. Sert les mêmes pages (accueil, login, register, dashboard,
+# coffre) pour un comparatif visuel direct en soutenance.
+if _STATIC_DIR.is_dir():
+    app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
+
+    _PAGES = {
+        "/": "index.html",
+        "/login": "login.html",
+        "/register": "register.html",
+        "/dashboard": "dashboard.html",
+        "/coffre": "secrets.html",  # /secrets est pris par l'API JSON
+    }
+
+    def _make_page(filename: str):
+        def _serve() -> HTMLResponse:
+            return HTMLResponse((_STATIC_DIR / filename).read_text(encoding="utf-8"))
+        return _serve
+
+    for _route, _file in _PAGES.items():
+        app.add_api_route(_route, _make_page(_file), methods=["GET"], include_in_schema=False)
 
 
 # Note : AUCUN middleware d'en-têtes de sécurité, AUCUN CORS whitelist,

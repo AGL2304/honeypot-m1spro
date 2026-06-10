@@ -113,3 +113,69 @@ def delete_note_for_owner(conn: sqlite3.Connection, note_id: str, owner_id: str)
     )
     conn.commit()
     return cur.rowcount > 0
+
+
+# --- Secrets (ressource avec ownership + chiffrement au repos) -------------
+# Le repository ne manipule QUE du ciphertext (`value_enc`) : le clair est
+# chiffré/déchiffré dans le routeur via `crypto.py`. Toutes les requêtes filtrent
+# par `owner_id` (anti-BOLA) et sont paramétrées (anti-SQLi).
+def create_secret(
+    conn: sqlite3.Connection, *, owner_id: str, label: str, value_enc: str
+) -> dict[str, Any]:
+    secret_id = str(uuid.uuid4())
+    conn.execute(
+        "INSERT INTO secrets (id, owner_id, label, value_enc) VALUES (?, ?, ?, ?)",
+        (secret_id, owner_id, label, value_enc),
+    )
+    conn.commit()
+    return {"id": secret_id, "owner_id": owner_id, "label": label}
+
+
+def list_secrets_for_owner(conn: sqlite3.Connection, owner_id: str) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        "SELECT id, owner_id, label, value_enc, created_at FROM secrets "
+        "WHERE owner_id = ? ORDER BY created_at DESC",
+        (owner_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_secret_for_owner(
+    conn: sqlite3.Connection, secret_id: str, owner_id: str
+) -> dict[str, Any] | None:
+    """Récupère un secret SEULEMENT s'il appartient à `owner_id` (anti-BOLA).
+
+    Deviner l'UUID d'autrui renvoie None (-> 404), jamais le ciphertext d'autrui.
+    """
+    row = conn.execute(
+        "SELECT id, owner_id, label, value_enc, created_at FROM secrets "
+        "WHERE id = ? AND owner_id = ?",
+        (secret_id, owner_id),
+    ).fetchone()
+    return _row_to_dict(row)
+
+
+def delete_secret_for_owner(conn: sqlite3.Connection, secret_id: str, owner_id: str) -> bool:
+    cur = conn.execute(
+        "DELETE FROM secrets WHERE id = ? AND owner_id = ?",
+        (secret_id, owner_id),
+    )
+    conn.commit()
+    return cur.rowcount > 0
+
+
+# --- Helpers de seed (démo) -----------------------------------------------
+def count_users(conn: sqlite3.Connection) -> int:
+    return int(conn.execute("SELECT COUNT(*) FROM users").fetchone()[0])
+
+
+def create_user_with_id(
+    conn: sqlite3.Connection, *, user_id: str, username: str, email: str, password_hash: str
+) -> None:
+    """Insertion idempotente d'un utilisateur à UUID fixe (seed démo)."""
+    conn.execute(
+        "INSERT OR IGNORE INTO users (id, username, email, password_hash) "
+        "VALUES (?, ?, ?, ?)",
+        (user_id, username, email, password_hash),
+    )
+    conn.commit()

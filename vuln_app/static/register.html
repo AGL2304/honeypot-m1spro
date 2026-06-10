@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>vuln_app — Inscription</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="danger-banner">⚠️ DÉMO VULNÉRABLE — mot de passe stocké EN CLAIR ⚠️</div>
+  <header class="nav">
+    <a href="/" class="brand">☠️ vuln_app <span class="tag">INSECURE</span></a>
+    <nav id="nav-links" class="nav-links"></nav>
+  </header>
+
+  <main class="container narrow">
+    <div class="card auth-card">
+      <h2>Créer un compte</h2>
+      <p class="sub">Aucune politique de mot de passe (volontaire). Le mot de passe sera stocké en clair.</p>
+      <form id="form-register" autocomplete="off">
+        <label>Nom d'utilisateur
+          <input name="username" required autofocus />
+        </label>
+        <label>Email
+          <input name="email" type="email" />
+        </label>
+        <label>Mot de passe
+          <input name="password" type="password" required />
+        </label>
+        <button class="btn btn-primary btn-block" type="submit">Créer le compte</button>
+      </form>
+      <p class="form-foot">Déjà inscrit ? <a href="/login">Se connecter</a></p>
+    </div>
+  </main>
+
+  <script src="/static/common.js"></script>
+  <script src="/static/register.js"></script>
+</body>
+</html>

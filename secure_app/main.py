@@ -30,11 +30,11 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import __version__, app_telemetry
+from . import __version__, app_telemetry, seed
 from .config import get_settings
 from .database import connect, init_db
 from .logging_conf import configure_logging
-from .routers import auth, notes, tools, users
+from .routers import auth, notes, secrets, tools, users
 
 logger = logging.getLogger("secure_app.main")
 
@@ -86,6 +86,7 @@ def create_app() -> FastAPI:
         conn = connect(app.state.db_path)
         try:
             init_db(conn)
+            seed.seed_if_empty(conn)  # données de démo si base vierge (idempotent)
         finally:
             conn.close()
         logger.info("secure_app démarrée (env=%s, version=%s)", settings.env, __version__)
@@ -200,6 +201,7 @@ def create_app() -> FastAPI:
     app.include_router(auth.router)
     app.include_router(users.router)
     app.include_router(notes.router)
+    app.include_router(secrets.router)
     app.include_router(tools.router)
 
     # --- IHM web multi-pages (front-end auto-porté, client de l'API) ----------
@@ -214,6 +216,7 @@ def create_app() -> FastAPI:
             "/login": "login.html",
             "/register": "register.html",
             "/dashboard": "dashboard.html",
+            "/coffre": "secrets.html",  # /secrets est pris par l'API JSON
         }
         _html_cache = {
             path: (_STATIC_DIR / filename).read_text(encoding="utf-8")

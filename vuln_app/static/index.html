@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>vuln_app — Accueil (DÉMO VULNÉRABLE)</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="danger-banner">⚠️ APPLICATION VOLONTAIREMENT VULNÉRABLE — DÉMO M1SPRO — NE PAS UTILISER DE VRAIES DONNÉES ⚠️</div>
+  <header class="nav">
+    <a href="/" class="brand">☠️ vuln_app <span class="tag">INSECURE</span></a>
+    <nav id="nav-links" class="nav-links"></nav>
+  </header>
+
+  <section class="hero">
+    <h1>Le jumeau vulnérable, pour mieux montrer la défense</h1>
+    <p class="lead">
+      Même surface d'API que <strong>secure_app</strong>, mais chaque protection
+      a été retirée. Les attaques Kali (sqlmap, commix, JWT forgé, ffuf) qui
+      échouent sur le port 8001 réussissent ici. Comparez par vous-même.
+    </p>
+    <div class="cta">
+      <a href="/register" class="btn btn-primary">Créer un compte</a>
+      <a href="/login" class="btn">Se connecter</a>
+      <a id="cta-space" href="/dashboard" class="btn btn-ghost hidden">Aller à mon espace</a>
+    </div>
+  </section>
+
+  <main class="container">
+    <div class="features">
+      <div class="feature">
+        <div class="ico">💉</div>
+        <h3>Injection SQL</h3>
+        <p>/auth/login concatène les entrées : <code>alice' OR '1'='1</code>
+           contourne l'authentification, sqlmap dumpe la table users.</p>
+      </div>
+      <div class="feature">
+        <div class="ico">🐚</div>
+        <h3>Command injection</h3>
+        <p>/tools/ping passe l'hôte à un shell : <code>127.0.0.1;id</code>
+           exécute des commandes arbitraires (uid=0 root).</p>
+      </div>
+      <div class="feature">
+        <div class="ico">🎭</div>
+        <h3>JWT cassé</h3>
+        <p>Signature jamais vérifiée : un jeton <code>alg:none</code> forgé est
+           accepté, usurpation d'identité immédiate.</p>
+      </div>
+      <div class="feature">
+        <div class="ico">🔓</div>
+        <h3>Secrets en clair</h3>
+        <p>Mots de passe et secrets stockés sans chiffrement, /users/me fuite le
+           mot de passe, BOLA sur /notes et /secrets.</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="/static/common.js"></script>
+  <script src="/static/home.js"></script>
+</body>
+</html>

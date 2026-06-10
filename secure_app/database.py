@@ -39,6 +39,21 @@ CREATE TABLE IF NOT EXISTS notes (
 );
 
 CREATE INDEX IF NOT EXISTS idx_notes_owner ON notes(owner_id);
+
+-- Coffre à secrets : valeur chiffrée au repos (AES-GCM via la clé applicative,
+-- cf. crypto.py). Le clair ne touche jamais le disque. Ownership systématique
+-- (anti-BOLA) et la liste ne renvoie qu'un APERÇU masqué, jamais le clair en
+-- bloc -> contraste direct avec vuln_app (stockage en clair + dump SQLi).
+CREATE TABLE IF NOT EXISTS secrets (
+    id         TEXT PRIMARY KEY,             -- UUID
+    owner_id   TEXT NOT NULL,                -- FK users.id (contrôle d'ownership)
+    label      TEXT NOT NULL,
+    value_enc  TEXT NOT NULL,                -- ciphertext (AES-256-GCM, base64)
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_secrets_owner ON secrets(owner_id);
 """
 
 

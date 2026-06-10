@@ -90,6 +90,7 @@ function makeLink(href, text, cls) {
 }
 
 async function renderNav() {
+  initChrome();                       // burger + footer (idempotent)
   const host = $("#nav-links");
   if (!host) return;
   host.replaceChildren();
@@ -103,6 +104,7 @@ async function renderNav() {
 
     if (username) {
       host.appendChild(makeLink("/dashboard", "Mon espace"));
+      host.appendChild(makeLink("/coffre", "Coffre"));
       const who = document.createElement("span");
       who.className = "nav-user";
       who.textContent = "👤 " + username;
@@ -113,11 +115,111 @@ async function renderNav() {
       out.textContent = "Déconnexion";
       out.addEventListener("click", logout);
       host.appendChild(out);
+      closeBurger();
       return;
     }
   }
   host.appendChild(makeLink("/login", "Connexion"));
   host.appendChild(makeLink("/register", "Inscription", "btn btn-primary"));
+  closeBurger();
+}
+
+/* ---- Chrome commun : bouton hamburger + pied de page (CSP-safe) ----
+ * Tout est construit via createElement/textContent (aucun innerHTML),
+ * injecté une seule fois. Source unique -> pas de markup dupliqué. */
+function closeBurger() {
+  const btn = $("#nav-toggle");
+  const host = $("#nav-links");
+  if (btn) btn.setAttribute("aria-expanded", "false");
+  if (host) host.classList.remove("open");
+}
+
+function initChrome() {
+  // 1) Bouton hamburger injecté dans la barre de navigation.
+  const nav = $("header.nav");
+  if (nav && !$("#nav-toggle")) {
+    const btn = document.createElement("button");
+    btn.id = "nav-toggle";
+    btn.className = "nav-burger";
+    btn.type = "button";
+    btn.setAttribute("aria-label", "Ouvrir le menu");
+    btn.setAttribute("aria-controls", "nav-links");
+    btn.setAttribute("aria-expanded", "false");
+    for (let i = 0; i < 3; i++) btn.appendChild(document.createElement("span"));
+    btn.addEventListener("click", () => {
+      const host = $("#nav-links");
+      if (!host) return;
+      const open = host.classList.toggle("open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    nav.appendChild(btn);
+  }
+
+  // 2) Pied de page injecté en fin de <body> s'il n'existe pas déjà.
+  if (!$("#site-footer")) buildFooter();
+}
+
+function buildFooter() {
+  const footer = document.createElement("footer");
+  footer.id = "site-footer";
+  footer.className = "site-footer";
+
+  const inner = document.createElement("div");
+  inner.className = "footer-inner";
+
+  const colA = document.createElement("div");
+  colA.className = "footer-col";
+  const hA = document.createElement("h4");
+  hA.textContent = "🔐 secure_app";
+  const pA = document.createElement("p");
+  pA.textContent =
+    "Vitrine défensive du programme « Sécurité en Programmation » (M1SPRO). "
+    + "Jumeau durci de vuln_app : mêmes fonctions, surface d'attaque réduite.";
+  colA.appendChild(hA);
+  colA.appendChild(pA);
+
+  const colB = document.createElement("div");
+  colB.className = "footer-col";
+  const hB = document.createElement("h4");
+  hB.textContent = "Navigation";
+  const ulB = document.createElement("ul");
+  [["/", "Accueil"], ["/dashboard", "Mon espace"], ["/coffre", "Coffre à secrets"]]
+    .forEach(([href, txt]) => {
+      const li = document.createElement("li");
+      li.appendChild(makeLink(href, txt));
+      ulB.appendChild(li);
+    });
+  colB.appendChild(hB);
+  colB.appendChild(ulB);
+
+  const colC = document.createElement("div");
+  colC.className = "footer-col";
+  const hC = document.createElement("h4");
+  hC.textContent = "Sécurité";
+  const ulC = document.createElement("ul");
+  ["Argon2id + JWT whitelisté", "AES-256-GCM au repos", "Anti-BOLA / rate limiting",
+   "CSP stricte, conteneur non-root"].forEach((txt) => {
+    const li = document.createElement("li");
+    li.textContent = txt;
+    li.style.color = "var(--muted)";
+    li.style.fontSize = ".85rem";
+    ulC.appendChild(li);
+  });
+  colC.appendChild(hC);
+  colC.appendChild(ulC);
+
+  inner.appendChild(colA);
+  inner.appendChild(colB);
+  inner.appendChild(colC);
+
+  const bottom = document.createElement("div");
+  bottom.className = "footer-bottom";
+  bottom.textContent =
+    "© 2026 secure_app — projet pédagogique M1SPRO. Ne pas utiliser de vrais secrets.";
+
+  footer.appendChild(inner);
+  footer.appendChild(bottom);
+  document.body.appendChild(footer);
 }
 
 async function logout() {

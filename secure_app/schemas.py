@@ -105,5 +105,30 @@ class PingIn(BaseModel):
     host: str = Field(min_length=1, max_length=253)
 
 
+class SecretIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    label: str = Field(min_length=1, max_length=120)
+    value: str = Field(min_length=1, max_length=4096)
+
+
+class SecretListItem(BaseModel):
+    """Vue LISTE : jamais le clair, seulement un aperçu masqué (anti-disclosure)."""
+
+    id: str
+    label: str
+    preview: str  # ex. "sk-l••••••3f" — quelques caractères, jamais la valeur
+    created_at: str
+
+
+class SecretOut(BaseModel):
+    """Vue DÉTAIL : clair renvoyé UNIQUEMENT au propriétaire (ownership vérifié)."""
+
+    id: str
+    label: str
+    value: str
+    created_at: str
+
+
 class MessageOut(BaseModel):
     detail: str
