@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>M1SPRO — L'histoire de deux jumeaux</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'sans-serif'],
+          mono: ['JetBrains Mono', 'monospace'],
+        },
+        colors: {
+          ink: '#0a0e17',
+          panel: '#111726',
+          secure: '#3b82f6',
+          vuln: '#ef4444',
+          gold: '#fbbf24',
+        }
+      }
+    }
+  }
+</script>
+<style>
+  html, body { margin:0; height:100%; background:#0a0e17; overflow:hidden; }
+  .deck { position:fixed; inset:0; }
+  .slide {
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; justify-content:center;
+    padding: 4.5vh 7vw;
+    opacity:0; transform: translateX(40px) scale(.98);
+    transition: opacity .5s ease, transform .5s ease;
+    pointer-events:none;
+  }
+  .slide.active { opacity:1; transform:none; pointer-events:auto; }
+  .slide.prev { transform: translateX(-40px) scale(.98); }
+  /* fond : grille + halo */
+  .bg-grid {
+    background-image:
+      radial-gradient(900px 600px at 80% -10%, rgba(59,130,246,.16), transparent 60%),
+      radial-gradient(800px 600px at 0% 110%, rgba(239,68,68,.12), transparent 60%),
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 44px 44px, 44px 44px;
+  }
+  .progress { position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,#3b82f6,#fbbf24); z-index:50; transition:width .4s ease; }
+  .counter { position:fixed; bottom:18px; right:26px; z-index:50; font-variant-numeric:tabular-nums; }
+  .navhint { position:fixed; bottom:18px; left:26px; z-index:50; }
+  .navbtn { position:fixed; top:50%; transform:translateY(-50%); z-index:50; width:46px;height:46px;border-radius:999px;
+            display:flex;align-items:center;justify-content:center; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+            color:#cbd5e1; cursor:pointer; transition:.2s; user-select:none; }
+  .navbtn:hover { background:rgba(255,255,255,.14); color:#fff; }
+  .chip { font-size:.72rem; letter-spacing:.18em; text-transform:uppercase; }
+  pre.code { font-family:'JetBrains Mono',monospace; font-size:.74rem; line-height:1.5; background:#070b14;
+             border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:14px 16px; overflow:auto; }
+  .kbd { font-family:'JetBrains Mono',monospace; font-size:.7rem; border:1px solid rgba(255,255,255,.18); border-bottom-width:2px; border-radius:6px; padding:1px 7px; }
+  .fade-up > * { opacity:0; transform:translateY(14px); animation:rise .6s forwards; }
+  .slide.active .fade-up > * { }
+  @keyframes rise { to { opacity:1; transform:none; } }
+  .slide.active .fade-up > *:nth-child(1){animation-delay:.05s}
+  .slide.active .fade-up > *:nth-child(2){animation-delay:.15s}
+  .slide.active .fade-up > *:nth-child(3){animation-delay:.25s}
+  .slide.active .fade-up > *:nth-child(4){animation-delay:.35s}
+  .slide.active .fade-up > *:nth-child(5){animation-delay:.45s}
+  .slide.active .fade-up > *:nth-child(6){animation-delay:.55s}
+  .slide:not(.active) .fade-up > * { animation:none; }
+  ::-webkit-scrollbar{height:8px;width:8px}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:8px}
+</style>
+</head>
+<body class="font-sans text-slate-100">
+
+<div class="progress" id="progress"></div>
+<div class="navbtn left-6" id="btnPrev">‹</div>
+<div class="navbtn right-6" id="btnNext">›</div>
+<div class="counter text-xs text-slate-400"><span id="cur">1</span> / <span id="total">0</span></div>
+<div class="navhint text-[11px] text-slate-500">← → naviguer &nbsp;·&nbsp; <span class="kbd">F</span> plein écran</div>
+
+<div class="deck bg-grid" id="deck">
+
+  <!-- 1. COUVERTURE -->
+  <section class="slide">
+    <div class="fade-up max-w-5xl">
+      <div class="chip text-secure mb-6">École IT · Master 1 Cybersécurité (U3) · Sécurité en Programmation</div>
+      <h1 class="text-6xl md:text-7xl font-black leading-[1.05] tracking-tight">
+        L'histoire de <span class="text-secure">deux jumeaux</span><span class="text-gold">.</span>
+      </h1>
+      <p class="mt-6 text-2xl text-slate-300 font-light max-w-3xl">
+        Même visage, mêmes fonctions. Une seule différence : la rigueur.
+        L'un survit à la nuit. <span class="text-vuln font-semibold">L'autre tombe.</span>
+      </p>
+      <div class="mt-12 flex flex-wrap gap-8 items-center">
+        <div>
+          <div class="chip text-slate-500">Auteurs</div>
+          <div class="text-lg font-semibold">ANANI Georges Lionel</div>
+          <div class="text-lg font-semibold">BOHOUSSOU Kouamé Marc</div>
+        </div>
+        <div class="h-12 w-px bg-white/15"></div>
+        <div>
+          <div class="chip text-slate-500">Projet</div>
+          <div class="text-lg font-semibold">Honeypot Intelligent M1SPRO</div>
+          <div class="text-slate-400">secure_app &nbsp;vs&nbsp; vuln_app — 10 juin 2026</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. HOOK -->
+  <section class="slide">
+    <div class="fade-up max-w-4xl">
+      <div class="chip text-gold mb-6">Prologue</div>
+      <h2 class="text-5xl font-black leading-tight">Il est 3 h du matin.</h2>
+      <p class="mt-8 text-2xl text-slate-300 font-light leading-relaxed">
+        Quelque part sur Internet, un scanner automatisé balaie des milliers d'adresses IP.
+        Il ne dort jamais. Il cherche une porte mal fermée, un mot de passe en clair,
+        un paramètre qu'on a oublié de filtrer.
+      </p>
+      <p class="mt-6 text-2xl text-slate-300 font-light leading-relaxed">
+        Ce soir, il tombe sur <span class="text-secure font-semibold">deux applications identiques</span>.
+        Mêmes pages, mêmes API, mêmes utilisateurs. Il lance ses outils.
+      </p>
+      <p class="mt-8 text-3xl font-bold text-gold">
+        Que va-t-il se passer ?
+      </p>
+    </div>
+  </section>
+
+  <!-- 3. LE CONSTAT -->
+  <section class="slide">
+    <div class="fade-up max-w-5xl">
+      <div class="chip text-secure mb-4">Le constat</div>
+      <h2 class="text-5xl font-black leading-tight mb-8">La faille n'est presque jamais dans le pare-feu.</h2>
+      <p class="text-xl text-slate-300 font-light mb-10 max-w-3xl">Elle est dans le <span class="text-white font-semibold">code</span>. Une requête concaténée, une signature non vérifiée, un secret stocké en clair. Le programme OWASP Top 10 (2021) résume où ça casse :</p>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div class="bg-panel rounded-xl p-4 border border-white/5"><span class="text-vuln font-mono text-sm">A01</span><div class="font-semibold">Contrôle d'accès cassé</div></div>
+        <div class="bg-panel rounded-xl p-4 border border-white/5"><span class="text-vuln font-mono text-sm">A02</span><div class="font-semibold">Échecs cryptographiques</div></div>
+        <div class="bg-panel rounded-xl p-4 border border-white/5"><span class="text-vuln font-mono text-sm">A03</span><div class="font-semibold">Injection</div></div>
+        <div class="bg-panel rounded-xl p-4 border border-white/5"><span class="text-vuln font-mono text-sm">A05</span><div class="font-semibold">Mauvaise configuration</div></div>
+        <div class="bg-panel rounded-xl p-4 border border-white/5"><span class="text-vuln font-mono text-sm">A07</span><div class="font-semibold">Authentification défaillante</div></div>
+        <div class="bg-panel rounded-xl p-4 border border-white/5"><span class="text-vuln font-mono text-sm">A09</span><div class="font-semibold">Journalisation insuffisante</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. L'IDEE -->
+  <section class="slide">
+    <div class="fade-up max-w-5xl">
+      <div class="chip text-gold mb-4">L'idée</div>
+      <h2 class="text-5xl font-black leading-tight mb-6">Pour prouver, il faut comparer.</h2>
+      <p class="text-xl text-slate-300 font-light mb-10 max-w-3xl">
+        Nous avons construit deux applications <span class="text-white font-semibold">jumelles</span> : même surface, mêmes données, même déploiement. Une seule variable change — la <span class="text-secure font-semibold">rigueur défensive</span>. L'écart de résultat isole donc la valeur exacte de chaque contre-mesure.
+      </p>
+      <div class="grid grid-cols-3 gap-5">
+        <div class="bg-panel rounded-xl p-5 border border-white/5"><div class="text-3xl mb-2">🔁</div><div class="font-bold text-lg">Surface identique</div><div class="text-slate-400 text-sm mt-1">/auth, /notes, /secrets, /tools/ping — alice & bob seedés.</div></div>
+        <div class="bg-panel rounded-xl p-5 border border-white/5"><div class="text-3xl mb-2">📦</div><div class="font-bold text-lg">Déploiement identique</div><div class="text-slate-400 text-sm mt-1">Mêmes conteneurs Docker, même droplet.</div></div>
+        <div class="bg-panel rounded-xl p-5 border border-white/5"><div class="text-3xl mb-2">⚖️</div><div class="font-bold text-lg">Une seule différence</div><div class="text-slate-400 text-sm mt-1">L'un applique les défenses. L'autre les retire.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. ARCHITECTURE -->
+  <section class="slide">
+    <div class="fade-up max-w-6xl w-full">
+      <div class="chip text-secure mb-4">Le terrain de jeu</div>
+      <h2 class="text-4xl font-black mb-8">Une architecture, plusieurs rôles.</h2>
+      <div class="grid grid-cols-12 gap-4 items-stretch">
+        <div class="col-span-12 md:col-span-4 bg-panel rounded-2xl p-5 border border-white/5">
+          <div class="chip text-gold mb-2">Leurres</div>
+          <div class="font-bold text-lg mb-2">Honeypots multi-services</div>
+          <ul class="text-slate-300 text-sm space-y-1">
+            <li>· SSH (asyncssh)</li><li>· HTTP (FastAPI)</li><li>· FTP (pyftpdlib)</li><li>· Telnet</li>
+          </ul>
+        </div>
+        <div class="col-span-12 md:col-span-4 bg-panel rounded-2xl p-5 border border-secure/30">
+          <div class="chip text-secure mb-2">Les jumeaux</div>
+          <div class="font-bold text-lg mb-2">secure_app &nbsp;·&nbsp; vuln_app</div>
+          <p class="text-slate-300 text-sm">API REST FastAPI exposées sur les ports <span class="font-mono">8001</span> et <span class="font-mono">8002</span>.</p>
+        </div>
+        <div class="col-span-12 md:col-span-4 bg-panel rounded-2xl p-5 border border-white/5">
+          <div class="chip text-gold mb-2">Cerveau & œil</div>
+          <div class="font-bold text-lg mb-2">Analyzer + Grafana</div>
+          <p class="text-slate-300 text-sm">Ingestion, classification, PostgreSQL et dashboard « Comparatif secure vs vuln ».</p>
+        </div>
+        <div class="col-span-12 bg-gradient-to-r from-secure/10 to-vuln/10 rounded-2xl p-4 border border-white/5 text-center text-slate-300">
+          Le tout orchestré par <span class="font-semibold text-white">Docker Compose</span>, gardé par une chaîne <span class="font-semibold text-white">DevSecOps</span> (GitHub Actions).
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. LES PERSONNAGES -->
+  <section class="slide">
+    <div class="fade-up max-w-6xl w-full">
+      <div class="chip text-slate-400 mb-4">Les personnages</div>
+      <h2 class="text-4xl font-black mb-8">Face à face.</h2>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="rounded-2xl p-7 border border-secure/40 bg-secure/5">
+          <div class="flex items-center gap-3 mb-4"><span class="text-4xl">🛡️</span><div><div class="text-2xl font-black text-secure">secure_app</div><div class="text-slate-400 text-sm font-mono">:8001 — le durci</div></div></div>
+          <ul class="space-y-2 text-slate-200">
+            <li>✓ SQL paramétré · <span class="font-mono text-sm">shell=False</span></li>
+            <li>✓ Argon2id · JWT whitelist · MFA TOTP</li>
+            <li>✓ Anti-BOLA · rate limiting · 8 en-têtes</li>
+            <li>✓ Secrets <span class="font-semibold">AES-256-GCM</span></li>
+            <li>✓ Conteneur non-root, <span class="font-mono text-sm">cap_drop ALL</span></li>
+          </ul>
+        </div>
+        <div class="rounded-2xl p-7 border border-vuln/40 bg-vuln/5">
+          <div class="flex items-center gap-3 mb-4"><span class="text-4xl">💀</span><div><div class="text-2xl font-black text-vuln">vuln_app</div><div class="text-slate-400 text-sm font-mono">:8002 — le négligent</div></div></div>
+          <ul class="space-y-2 text-slate-200">
+            <li>✗ SQL concaténé (f-string)</li>
+            <li>✗ Mots de passe en clair · JWT non vérifié</li>
+            <li>✗ BOLA · aucune limite de tentatives</li>
+            <li>✗ Secrets en clair · <span class="font-mono text-sm">/secrets/export</span> sans auth</li>
+            <li>✗ Conteneur en <span class="font-mono text-sm">root</span>, stack traces fuitées</li>
+          </ul>
+        </div>
+      </div>
+      <p class="text-center text-slate-400 mt-6 italic">Le scanner ne fait pas la différence… au début.</p>
+    </div>
+  </section>
+
+  <!-- 7. ACTE I — SQLi -->
+  <section class="slide">
+    <div class="fade-up max-w-6xl w-full">
+      <div class="chip text-vuln mb-3">Acte I · Injection SQL · <span class="text-slate-400">sqlmap</span></div>
+      <h2 class="text-4xl font-black mb-6">« Et si la base de données parlait trop ? »</h2>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div>
+          <div class="text-vuln font-semibold mb-2">vuln_app — la table tombe</div>
+          <pre class="code text-slate-300">Type: boolean-based blind
+Payload: alice%' OR NOT 9856=9856-- Jzlt
+
+Table: users [2 entries]
++------+---------+-------------------+
+| id   | email   | password          |
++------+---------+-------------------+
+| 5af… | a@x.com | Sup3r-S3cret!Pass |
+| c31… | b@x.com | Sup3r-S3cret!Pass |
++------+---------+-------------------+</pre>
+          <p class="text-slate-400 text-sm mt-2">Mots de passe lus en clair. Double faille.</p>
+        </div>
+        <div>
+          <div class="text-secure font-semibold mb-2">secure_app — mur de pierre</div>
+          <pre class="code text-slate-300">[CRITICAL] all tested parameters
+do not appear to be injectable.
+
+HTTP error codes during run:
+401 (Unauthorized)      -   5 times
+429 (Too Many Requests) - 686 times</pre>
+          <p class="text-slate-300 text-sm mt-2">Requêtes <span class="text-secure font-semibold">paramétrées</span> + rate-limiter. <span class="text-secure font-bold">429 × 686.</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. ACTE II — RCE -->
+  <section class="slide">
+    <div class="fade-up max-w-6xl w-full">
+      <div class="chip text-vuln mb-3">Acte II · Injection de commandes · <span class="text-slate-400">RCE</span></div>
+      <h2 class="text-4xl font-black mb-6">« Un simple ping… qui exécute n'importe quoi. »</h2>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div>
+          <div class="text-vuln font-semibold mb-2">vuln_app — code arbitraire en root</div>
+          <pre class="code text-slate-300">POST /tools/ping
+host = "127.0.0.1; id; cat /etc/passwd"
+
+uid=0(root) gid=0(root) groups=0(root)
+9a12cec8517b
+root:x:0:0:root:/root:/bin/bash</pre>
+          <p class="text-vuln text-sm mt-2 font-semibold">RCE confirmé — et le conteneur tourne en root.</p>
+        </div>
+        <div>
+          <div class="text-secure font-semibold mb-2">secure_app — refusé avant l'OS</div>
+          <pre class="code text-slate-300">HTTP/1.1 400 Bad Request
+x-content-type-options: nosniff
+x-frame-options: DENY
+content-security-policy: default-src 'none'
+strict-transport-security: max-age=63072000
+cache-control: no-store          (+8 en-têtes)</pre>
+          <p class="text-slate-300 text-sm mt-2">Hôte validé puis <span class="font-mono text-secure">shell=False</span> : <span class="text-secure font-semibold">aucun uid=</span>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. ACTE III — JWT -->
+  <section class="slide">
+    <div class="fade-up max-w-6xl w-full">
+      <div class="chip text-vuln mb-3">Acte III · JWT <span class="font-mono">alg:none</span> · <span class="text-slate-400">forge de jeton</span></div>
+      <h2 class="text-4xl font-black mb-6">« Un laissez-passer sans signature. »</h2>
+      <p class="text-slate-300 mb-5 max-w-3xl">On forge un jeton dont l'algorithme est <span class="font-mono text-gold">none</span> et la signature… vide. Reprend l'identité d'alice.</p>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="rounded-2xl p-6 border border-vuln/40 bg-vuln/5">
+          <div class="text-vuln font-semibold mb-2">vuln_app</div>
+          <div class="text-5xl font-black text-vuln">200 OK</div>
+          <p class="text-slate-300 mt-3">Compte usurpé + mot de passe renvoyé en clair par <span class="font-mono text-sm">/users/me</span>.</p>
+        </div>
+        <div class="rounded-2xl p-6 border border-secure/40 bg-secure/5">
+          <div class="text-secure font-semibold mb-2">secure_app</div>
+          <div class="text-5xl font-black text-secure">401</div>
+          <p class="text-slate-300 mt-3">Liste blanche d'algorithmes (<span class="font-mono text-sm">HS256</span> uniquement). Le faux jeton est rejeté.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. ACTE IV — Brute force -->
+  <section class="slide">
+    <div class="fade-up max-w-6xl w-full">
+      <div class="chip text-vuln mb-3">Acte IV · Brute-force · <span class="text-slate-400">ffuf</span></div>
+      <h2 class="text-4xl font-black mb-6">« Le bélier contre la porte. »</h2>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div>
+          <div class="text-vuln font-semibold mb-2">vuln_app — aucune limite</div>
+          <pre class="code text-slate-300">ffuf -w wl.txt -d '{"username":"alice",
+     "password":"FUZZ"}' -mc 200
+
+Sup3r-S3cret!Pass   [Status: 200]</pre>
+          <p class="text-vuln text-sm mt-2 font-semibold">Mot de passe deviné en quelques essais.</p>
+        </div>
+        <div>
+          <div class="text-secure font-semibold mb-2">secure_app — la rafale s'étrangle</div>
+          <pre class="code text-slate-300">letmein            [Status: 429]
+Sup3r-S3cret!Pass  [Status: 429]  ← même le BON
+azerty             [Status: 429]</pre>
+          <p class="text-slate-300 text-sm mt-2">Le rate-limiter coupe avant tout aboutissement. <span class="text-secure font-semibold">Même la bonne combinaison ressort en 429.</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11. ACTE V — Coffre -->
+  <section class="slide">
+    <div class="fade-up max-w-6xl w-full">
+      <div class="chip text-vuln mb-3">Acte V · Le coffre · <span class="text-slate-400">secrets au repos</span></div>
+      <h2 class="text-4xl font-black mb-6">« Si on vole la base, que reste-t-il ? »</h2>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="rounded-2xl p-6 border border-vuln/40 bg-vuln/5">
+          <div class="text-vuln font-semibold mb-3">vuln_app — tout en clair</div>
+          <pre class="code text-slate-300">GET /secrets/export   (sans auth)
+[
+  {"owner":"alice","value":"sk_live_42…"},
+  {"owner":"bob","value":"prod_db_pass…"}
+]</pre>
+          <p class="text-vuln text-sm mt-2 font-semibold">Tous les secrets, tous les comptes, sans jeton.</p>
+        </div>
+        <div class="rounded-2xl p-6 border border-secure/40 bg-secure/5">
+          <div class="text-secure font-semibold mb-3">secure_app — chiffré authentifié</div>
+          <pre class="code text-slate-300">AES-256-GCM  +  clé dérivée HKDF-SHA256
+stocké : base64( nonce || ciphertext || tag )
+
+en base :  Z9t1…q4Aա==   (illisible)
+aperçu  :  sk••••••5e   (révélé au seul
+                          propriétaire)</pre>
+          <p class="text-secure text-sm mt-2 font-semibold">Un dump ne livre que du chiffré inutilisable.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12. LE VERDICT -->
+  <section class="slide">
+    <div class="fade-up max-w-6xl w-full">
+      <div class="chip text-gold mb-3">Le verdict</div>
+      <h2 class="text-4xl font-black mb-8">Cinq épreuves. Deux destins.</h2>
+      <div class="overflow-hidden rounded-2xl border border-white/10">
+        <table class="w-full text-left">
+          <thead class="bg-white/5 text-slate-300 text-sm">
+            <tr><th class="p-3">Attaque</th><th class="p-3">Outil</th><th class="p-3 text-vuln">vuln_app</th><th class="p-3 text-secure">secure_app</th><th class="p-3">Défense</th></tr>
+          </thead>
+          <tbody class="text-sm divide-y divide-white/5">
+            <tr><td class="p-3 font-semibold">Injection SQL</td><td class="p-3 font-mono text-slate-400">sqlmap</td><td class="p-3 text-vuln">table dumpée</td><td class="p-3 text-secure">non injectable + 429</td><td class="p-3 text-slate-300">Requêtes paramétrées</td></tr>
+            <tr><td class="p-3 font-semibold">Command injection</td><td class="p-3 font-mono text-slate-400">payload</td><td class="p-3 text-vuln">uid=0(root)</td><td class="p-3 text-secure">400 rejeté</td><td class="p-3 text-slate-300">shell=False + validation</td></tr>
+            <tr><td class="p-3 font-semibold">JWT alg:none</td><td class="p-3 font-mono text-slate-400">python</td><td class="p-3 text-vuln">200 usurpé</td><td class="p-3 text-secure">401</td><td class="p-3 text-slate-300">Whitelist HS256</td></tr>
+            <tr><td class="p-3 font-semibold">Brute-force</td><td class="p-3 font-mono text-slate-400">ffuf</td><td class="p-3 text-vuln">200 trouvé</td><td class="p-3 text-secure">429 étranglé</td><td class="p-3 text-slate-300">Rate-limiter</td></tr>
+            <tr><td class="p-3 font-semibold">Secrets en clair</td><td class="p-3 font-mono text-slate-400">transverse</td><td class="p-3 text-vuln">lisible ×3</td><td class="p-3 text-secure">Argon2id + AES-GCM</td><td class="p-3 text-slate-300">Hachage + chiffrement</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-center mt-6 text-2xl font-bold"><span class="text-vuln">5 / 5 réussies</span> &nbsp;·&nbsp; <span class="text-secure">5 / 5 bloquées</span></p>
+    </div>
+  </section>
+
+  <!-- 13. DEFENSE EN PROFONDEUR -->
+  <section class="slide">
+    <div class="fade-up max-w-5xl w-full">
+      <div class="chip text-secure mb-3">Le secret de secure_app</div>
+      <h2 class="text-4xl font-black mb-3">La défense en profondeur.</h2>
+      <p class="text-slate-300 mb-8 max-w-3xl">Aucune couche n'est invincible seule. C'est leur <span class="text-white font-semibold">empilement</span> qui arrête l'attaquant — si une cède, la suivante tient.</p>
+      <div class="space-y-3">
+        <div class="flex items-center gap-4 bg-panel rounded-xl p-4 border border-white/5"><span class="text-secure font-mono w-8">1</span><span class="font-semibold w-40">Entrée</span><span class="text-slate-300">Pydantic <span class="font-mono text-xs">extra=forbid</span>, SQL paramétré, validation d'hôte</span></div>
+        <div class="flex items-center gap-4 bg-panel rounded-xl p-4 border border-white/5"><span class="text-secure font-mono w-8">2</span><span class="font-semibold w-40">Authentification</span><span class="text-slate-300">Argon2id, JWT whitelist, MFA TOTP, réponses génériques</span></div>
+        <div class="flex items-center gap-4 bg-panel rounded-xl p-4 border border-white/5"><span class="text-secure font-mono w-8">3</span><span class="font-semibold w-40">Autorisation</span><span class="text-slate-300">Filtre <span class="font-mono text-xs">owner_id</span> → 404 anti-BOLA</span></div>
+        <div class="flex items-center gap-4 bg-panel rounded-xl p-4 border border-white/5"><span class="text-secure font-mono w-8">4</span><span class="font-semibold w-40">Périmètre HTTP</span><span class="text-slate-300">8 en-têtes, CORS strict, rate limiting, erreurs neutres</span></div>
+        <div class="flex items-center gap-4 bg-panel rounded-xl p-4 border border-white/5"><span class="text-secure font-mono w-8">5</span><span class="font-semibold w-40">Exécution</span><span class="text-slate-300">Conteneur non-root, <span class="font-mono text-xs">cap_drop ALL</span>, rootfs read-only, secret fail-closed</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14. MEMOIRE J2 -->
+  <section class="slide">
+    <div class="fade-up max-w-5xl w-full">
+      <div class="chip text-gold mb-3">Chapitre bonus · Jour 2</div>
+      <h2 class="text-4xl font-black mb-3">Et la mémoire ?</h2>
+      <p class="text-slate-300 mb-8 max-w-3xl">Python protège des dépassements de tampon. Pour ne pas l'oublier, un lab en C le <span class="text-white font-semibold">prouve en CI</span> — de façon déterministe.</p>
+      <div class="grid md:grid-cols-3 gap-5">
+        <div class="bg-panel rounded-2xl p-5 border border-vuln/30"><div class="font-mono text-vuln text-sm mb-1">vuln_nomit</div><div class="font-bold mb-1">Naïf</div><p class="text-slate-400 text-sm">L'overflow écrase le drapeau d'authentification.</p></div>
+        <div class="bg-panel rounded-2xl p-5 border border-gold/30"><div class="font-mono text-gold text-sm mb-1">vuln_canary</div><div class="font-bold mb-1">Canari</div><p class="text-slate-400 text-sm">Corruption détectée → <span class="font-mono">abort (rc 134)</span>.</p></div>
+        <div class="bg-panel rounded-2xl p-5 border border-secure/30"><div class="font-mono text-secure text-sm mb-1">hardened</div><div class="font-bold mb-1">Borné</div><p class="text-slate-400 text-sm">Refus propre <span class="font-mono">(rc 1)</span>, aucune corruption.</p></div>
+      </div>
+      <p class="text-slate-400 mt-6 italic">Le canari détecte ; la copie bornée empêche. Complémentaires.</p>
+    </div>
+  </section>
+
+  <!-- 15. DEVSECOPS -->
+  <section class="slide">
+    <div class="fade-up max-w-6xl w-full">
+      <div class="chip text-secure mb-3">Le gardien automatique</div>
+      <h2 class="text-4xl font-black mb-3">À chaque <span class="font-mono text-3xl">git push</span>, la sécurité repasse.</h2>
+      <p class="text-slate-300 mb-8 max-w-3xl">Une chaîne DevSecOps (GitHub Actions) empêche toute régression. Rien ne part en prod sans passer ces portes.</p>
+      <div class="flex flex-wrap gap-3">
+        <span class="bg-panel border border-white/10 rounded-lg px-4 py-2">🧹 Ruff <span class="text-slate-500 text-sm">lint</span></span>
+        <span class="bg-panel border border-white/10 rounded-lg px-4 py-2">🔎 Bandit <span class="text-slate-500 text-sm">SAST</span></span>
+        <span class="bg-panel border border-white/10 rounded-lg px-4 py-2">🔬 Semgrep <span class="text-slate-500 text-sm">SAST</span></span>
+        <span class="bg-panel border border-white/10 rounded-lg px-4 py-2">✅ Pytest <span class="text-slate-500 text-sm">66 tests</span></span>
+        <span class="bg-panel border border-white/10 rounded-lg px-4 py-2">🥊 secure-app-live <span class="text-slate-500 text-sm">19 contrôles</span></span>
+        <span class="bg-panel border border-white/10 rounded-lg px-4 py-2">🕷️ OWASP ZAP <span class="text-slate-500 text-sm">DAST</span></span>
+        <span class="bg-panel border border-white/10 rounded-lg px-4 py-2">🐳 Trivy <span class="text-slate-500 text-sm">images</span></span>
+        <span class="bg-panel border border-white/10 rounded-lg px-4 py-2">🧠 Lab J2 <span class="text-slate-500 text-sm">mémoire</span></span>
+      </div>
+      <div class="mt-8 bg-gradient-to-r from-secure/10 to-transparent border border-secure/20 rounded-xl p-4 text-slate-200">
+        <span class="font-semibold text-secure">Règle d'or :</span> jamais contourner un contrôle pour faire passer la CI. On corrige la <span class="font-semibold">cause racine</span>.
+      </div>
+    </div>
+  </section>
+
+  <!-- 16. LES CHIFFRES -->
+  <section class="slide">
+    <div class="fade-up max-w-6xl w-full">
+      <div class="chip text-gold mb-3">En chiffres</div>
+      <h2 class="text-4xl font-black mb-10">Ce que la nuit a révélé.</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+        <div class="bg-panel rounded-2xl p-6 border border-secure/20 text-center"><div class="text-5xl font-black text-secure">5/5</div><div class="text-slate-400 mt-2">attaques bloquées (secure)</div></div>
+        <div class="bg-panel rounded-2xl p-6 border border-vuln/20 text-center"><div class="text-5xl font-black text-vuln">5/5</div><div class="text-slate-400 mt-2">attaques réussies (vuln)</div></div>
+        <div class="bg-panel rounded-2xl p-6 border border-white/10 text-center"><div class="text-5xl font-black">66</div><div class="text-slate-400 mt-2">tests automatisés ✓</div></div>
+        <div class="bg-panel rounded-2xl p-6 border border-white/10 text-center"><div class="text-5xl font-black">429<span class="text-2xl">×686</span></div><div class="text-slate-400 mt-2">refus au brute-force SQL</div></div>
+        <div class="bg-panel rounded-2xl p-6 border border-white/10 text-center"><div class="text-5xl font-black">8</div><div class="text-slate-400 mt-2">en-têtes de sécurité</div></div>
+        <div class="bg-panel rounded-2xl p-6 border border-white/10 text-center"><div class="text-5xl font-black">256</div><div class="text-slate-400 mt-2">bits AES-GCM (coffre)</div></div>
+        <div class="bg-panel rounded-2xl p-6 border border-white/10 text-center"><div class="text-5xl font-black">5</div><div class="text-slate-400 mt-2">images scannées Trivy</div></div>
+        <div class="bg-panel rounded-2xl p-6 border border-white/10 text-center"><div class="text-5xl font-black">0</div><div class="text-slate-400 mt-2">secret en dur dans l'image</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 17. LA MORALE -->
+  <section class="slide">
+    <div class="fade-up max-w-4xl">
+      <div class="chip text-gold mb-4">La morale</div>
+      <h2 class="text-5xl font-black leading-tight mb-8">La sécurité n'est pas une option.<br/>C'est une <span class="text-secure">manière d'écrire le code</span>.</h2>
+      <ul class="space-y-4 text-xl text-slate-300 font-light">
+        <li>→ Une même attaque échoue d'un côté et réussit de l'autre : la seule variable, c'est la <span class="text-white font-semibold">discipline</span>.</li>
+        <li>→ Chaque contre-mesure a un <span class="text-white font-semibold">coût quasi nul</span> et un bénéfice énorme.</li>
+        <li>→ La défense en profondeur + l'automatisation DevSecOps = des propriétés qui ne <span class="text-white font-semibold">régressent pas</span>.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 18. MERCI -->
+  <section class="slide">
+    <div class="fade-up max-w-4xl">
+      <div class="text-6xl mb-6">🛡️</div>
+      <h2 class="text-6xl font-black mb-6">Merci.</h2>
+      <p class="text-2xl text-slate-300 font-light mb-10">Le scanner a passé son chemin. <span class="text-secure">secure_app</span> a tenu jusqu'au matin.</p>
+      <div class="flex flex-wrap gap-8">
+        <div><div class="chip text-slate-500">Présenté par</div><div class="text-xl font-bold">ANANI Georges Lionel</div><div class="text-xl font-bold">BOHOUSSOU Kouamé Marc</div></div>
+        <div class="h-14 w-px bg-white/15"></div>
+        <div><div class="chip text-slate-500">M1 Cybersécurité · U3 · École IT</div><div class="text-slate-300 mt-1">Sécurité en Programmation — J1 → J5</div><div class="text-slate-500 mt-1">Des questions ?</div></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let i = 0;
+  document.getElementById('total').textContent = slides.length;
+
+  function render() {
+    slides.forEach((s, idx) => {
+      s.classList.toggle('active', idx === i);
+      s.classList.toggle('prev', idx < i);
+    });
+    document.getElementById('cur').textContent = i + 1;
+    document.getElementById('progress').style.width = ((i+1)/slides.length*100) + '%';
+  }
+  function go(n){ i = Math.max(0, Math.min(slides.length-1, n)); render(); }
+  function next(){ go(i+1); }
+  function prev(){ go(i-1); }
+
+  document.getElementById('btnNext').onclick = next;
+  document.getElementById('btnPrev').onclick = prev;
+
+  window.addEventListener('keydown', (e) => {
+    if (['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)) { e.preventDefault(); next(); }
+    else if (['ArrowLeft','ArrowUp','PageUp'].includes(e.key)) { e.preventDefault(); prev(); }
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(slides.length-1);
+    else if (e.key.toLowerCase() === 'f') {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+  });
+
+  // navigation tactile (swipe)
+  let tx=0;
+  window.addEventListener('touchstart', e => tx = e.changedTouches[0].clientX, {passive:true});
+  window.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 60) { dx < 0 ? next() : prev(); }
+  }, {passive:true});
+
+  render();
+</script>
+</body>
+</html>
