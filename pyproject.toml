@@ -46,7 +46,9 @@ target-version = "py312"
 # vuln_app/ est un JUMEAU VOLONTAIREMENT VULNÉRABLE (démo attaque/défense, comme
 # DVWA) : ses failles sont intentionnelles. On l'exclut de l'analyse statique
 # pour ne pas polluer le signal — il n'est ni packagé ni déployé en prod.
-extend-exclude = ["vuln_app"]
+# generate_rapport.py : utilitaire d'AUTHORING du rapport .docx (python-docx),
+# ni packagé ni déployé — exclu du lint comme les autres scripts hors-app.
+extend-exclude = ["vuln_app", "generate_rapport.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "S"]
